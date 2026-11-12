@@ -1,0 +1,422 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+<title>Test SCS · 300</title>
+<meta name="theme-color" content="#0055aa">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icon.svg">
+<style>
+:root{--bg:#fff;--fg:#111;--card:#f4f4f4;--btn:#0055aa;--btn-fg:#fff;--ok:#1b7a1b;--ko:#b00020;--border:#ccc;--mic:#c62828}
+[data-theme="dark"]{--bg:#111;--fg:#f0f0f0;--card:#1e1e1e;--btn:#3399ff;--btn-fg:#000;--ok:#4caf50;--ko:#ff5252;--border:#444;--mic:#ff5252}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);font-family:system-ui,-apple-system,"Segoe UI",Arial,sans-serif;font-size:20px;line-height:1.5}
+header{position:sticky;top:0;background:var(--bg);border-bottom:2px solid var(--border);padding:10px;display:flex;flex-wrap:wrap;gap:8px;align-items:center;z-index:10}
+header h1{font-size:1rem;margin:0;flex:1 1 auto}
+header .stats{font-size:.9rem;font-weight:bold}
+header button{font-size:1rem;padding:8px 12px;cursor:pointer;border-radius:8px;border:2px solid var(--border);background:var(--card);color:var(--fg)}
+main{padding:15px;max-width:900px;margin:0 auto}
+.pregunta{background:var(--card);border-radius:12px;padding:15px;margin-bottom:15px}
+.num{font-weight:bold;font-size:1.1rem;margin-bottom:10px}
+.enunciado{font-size:1.15rem;margin-bottom:15px}
+.opciones{display:flex;flex-direction:column;gap:10px}
+.opcion{background:var(--bg);color:var(--fg);border:2px solid var(--border);border-radius:10px;padding:15px;font-size:1.1rem;text-align:left;cursor:pointer;display:flex;gap:10px;align-items:flex-start;font-family:inherit}
+.opcion .letra{font-weight:bold;font-size:1.3rem;min-width:2rem;color:var(--btn)}
+.opcion.correct{border-color:var(--ok);background:rgba(76,175,80,.2)}
+.opcion.wrong{border-color:var(--ko);background:rgba(255,82,82,.2)}
+.opcion:disabled{cursor:default}
+.resultado{margin-top:15px;font-size:1.2rem;font-weight:bold;padding:10px;border-radius:10px;display:none}
+.resultado.ok{background:rgba(76,175,80,.25);color:var(--ok);display:block}
+.resultado.ko{background:rgba(255,82,82,.25);color:var(--ko);display:block}
+.controles{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;margin-top:15px}
+.controles button{background:var(--btn);color:var(--btn-fg);border:none;border-radius:10px;padding:15px 20px;font-size:1.1rem;cursor:pointer;min-width:110px;font-family:inherit}
+.controles button:disabled{opacity:.5}
+.btn-sec{background:var(--card)!important;color:var(--fg)!important;border:2px solid var(--border)!important}
+.btn-mic{background:var(--mic)!important;color:#fff!important;font-size:1.5rem!important;min-width:80px!important}
+.btn-mic.escuchando{animation:pulse 1s infinite}
+@keyframes pulse{0%,100%{box-shadow:0 0 0 0 var(--mic)}50%{box-shadow:0 0 0 15px rgba(198,40,40,0)}}
+.reconocido{text-align:center;font-size:1rem;color:var(--btn);min-height:1.5em;margin-top:8px}
+.config-voz{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;align-items:center;margin-top:15px;padding:10px;background:var(--card);border-radius:10px;border:1px solid var(--border);font-size:0.9rem}
+.config-voz select{padding:8px;border-radius:8px;font-size:1rem;max-width:250px;border:1px solid var(--border);background:var(--bg);color:var(--fg);font-family:inherit}
+.config-voz button{padding:8px 12px;border-radius:8px;background:var(--btn);color:var(--btn-fg);border:none;cursor:pointer;font-size:0.9rem}
+@media (max-width:600px){body{font-size:18px}.opcion{font-size:1rem}.enunciado{font-size:1.05rem}}
+</style>
+</head>
+<body>
+<header>
+  <h1>Test SCS · <span id="prog">0/300</span></h1>
+  <div class="stats">✅ <span id="okCount">0</span> · ❌ <span id="koCount">0</span></div>
+  <button id="btnTheme" title="Claro/oscuro">🌓</button>
+  <button id="btnAudio" title="Voz alta activada">🔊</button>
+  <button id="btnConversation" title="Modo conversación">🗣️</button>
+</header>
+<main>
+  <div class="pregunta">
+    <div class="num" id="num">Cargando…</div>
+    <div class="enunciado" id="enunciado"></div>
+    <div class="opciones" id="opciones"></div>
+    <div class="resultado" id="resultado"></div>
+  </div>
+  
+  <div class="config-voz" id="panelVoz">
+    <label>Voz: <select id="voiceSelect"></select></label>
+    <button id="testVoice">▶ Probar voz</button>
+  </div>
+
+  <div class="controles">
+    <button id="micBtn" class="btn-mic" title="Hablar">🎤</button>
+    <button id="repeat" class="btn-sec">🔁 Repetir</button>
+  </div>
+  <div class="reconocido" id="reconocido"></div>
+  <div class="controles">
+    <button id="prev" class="btn-sec">◀ Anterior</button>
+    <button id="next">Siguiente ▶</button>
+  </div>
+  <div class="controles">
+    <button id="failedMode" class="btn-sec">📋 Solo falladas</button>
+    <button id="restart" class="btn-sec">🔄 Reiniciar</button>
+  </div>
+</main>
+<script src="preguntas.js"></script>
+<script>
+(function(){
+  'use strict';
+  const S_KEY='test_scs_v2';
+  const listState={answers:{}};
+  let currentIdx=0, failedOnly=false, audioOn=true, conversationMode=false, listening=false;
+  const synth=window.speechSynthesis;
+  const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+  let recognition=null;
+  let selectedVoice=null;
+
+  const $ = id => document.getElementById(id);
+
+  function loadState(){
+    try{const s=JSON.parse(localStorage.getItem(S_KEY));if(s&&s.answers)Object.assign(listState,s);}catch(e){}
+  }
+  function saveState(){localStorage.setItem(S_KEY,JSON.stringify(listState));}
+  function getList(){
+    if(!failedOnly)return PREGUNTAS;
+    return PREGUNTAS.filter(p=>listState.answers[p.n]==='ko');
+  }
+
+  // --- GESTIÓN DE VOCES ---
+  function cargarVoces(){
+    if(!synth)return;
+    const voces = synth.getVoices();
+    const selector = $('voiceSelect');
+    selector.innerHTML = '';
+    
+    // Filtrar voces en español
+    const vocesEsp = voces.filter(v => v.lang.startsWith('es'));
+    if(vocesEsp.length === 0) {
+        // Si no hay voces en español, poner todas
+        voces.forEach(v => selector.add(new Option(v.name, v.name)));
+    } else {
+        vocesEsp.forEach(v => selector.add(new Option(v.name, v.name)));
+    }
+
+    // Intentar cargar la voz guardada
+    const guardada = localStorage.getItem('test_scs_voice');
+    if(guardada) {
+        for(let i=0; i<selector.options.length; i++){
+            if(selector.options[i].value === guardada) {
+                selector.selectedIndex = i;
+                break;
+            }
+        }
+    } else {
+        // Buscar automáticamente una voz masculina (Pablo, Raul, Jorge, Diego, etc.)
+        const masculinas = ["pablo", "raul", "jorge", "diego", "enrique", "hombre", "male"];
+        for(let i=0; i<selector.options.length; i++){
+            const nombre = selector.options[i].value.toLowerCase();
+            if(masculinas.some(m => nombre.includes(m))){
+                selector.selectedIndex = i;
+                break;
+            }
+        }
+    }
+    actualizarVozSeleccionada();
+  }
+
+  function actualizarVozSeleccionada(){
+    const nombre = $('voiceSelect').value;
+    const voces = synth.getVoices();
+    selectedVoice = voces.find(v => v.name === nombre);
+    localStorage.setItem('test_scs_voice', nombre);
+  }
+
+  $('voiceSelect').onchange = actualizarVozSeleccionada;
+
+  $('testVoice').onclick = () => {
+    stopSpeak();
+    const u = new SpeechSynthesisUtterance("Hola, esta es una prueba de voz. Pregunta número uno. Opción dos.");
+    if(selectedVoice) u.voice = selectedVoice;
+    u.lang = 'es-ES';
+    u.pitch = 0.8; // Tono más grave (0 es el más grave, 2 el más agudo)
+    u.rate = 0.95; // Velocidad ligeramente pausada
+    synth.speak(u);
+  };
+
+  // --- REPRODUCIR VOZ ---
+  function speak(text){
+    if(!audioOn||!synth)return;
+    synth.cancel();
+    const u=new SpeechSynthesisUtterance(text);
+    if(selectedVoice) u.voice = selectedVoice;
+    u.lang='es-ES';
+    u.pitch=0.8; // Voz más grave y profunda
+    u.rate=0.95; // Un poco más lenta para que sea expresiva
+    synth.speak(u);
+  }
+  function stopSpeak(){if(synth)synth.cancel();}
+
+  function checkLoad(){
+    if(typeof PREGUNTAS==='undefined'){
+      $('num').textContent='ERROR: no se ha cargado preguntas.js';
+      $('enunciado').textContent='Asegúrate de que el archivo preguntas.js está en la MISMA carpeta que index.html y termina con "];".';
+      return false;
+    }
+    if(!Array.isArray(PREGUNTAS)||PREGUNTAS.length===0){
+      $('num').textContent='ERROR: preguntas.js está vacío o mal formado.';
+      return false;
+    }
+    return true;
+  }
+
+  function render(){
+    const list=getList();
+    const numEl=$('num'), enEl=$('enunciado'), opcEl=$('opciones'), resEl=$('resultado');
+    if(list.length===0){
+      numEl.textContent='No hay preguntas para mostrar.';
+      enEl.textContent='';opcEl.innerHTML='';resEl.style.display='none';
+      updateStats();return;
+    }
+    if(currentIdx>=list.length)currentIdx=list.length-1;
+    if(currentIdx<0)currentIdx=0;
+    const p=list[currentIdx];
+    numEl.textContent='Pregunta '+p.n;
+    enEl.textContent=p.q;
+    opcEl.innerHTML='';
+    const prev=listState.answers[p.n];
+    const letras=['1','2','3','4'];
+    p.o.forEach((op,i)=>{
+      const b=document.createElement('button');
+      b.className='opcion';
+      b.dataset.idx=i+1;
+      b.innerHTML='<span class="letra">'+letras[i]+'.</span><span>'+op+'</span>';
+      if(prev){
+        b.disabled=true;
+        if((i+1)===p.a)b.classList.add('correct');
+        if(prev===i+1&&prev!==p.a)b.classList.add('wrong');
+      }else{
+        b.addEventListener('click',()=>answer(p,i+1));
+      }
+      opcEl.appendChild(b);
+    });
+    if(prev){
+      resEl.style.display='block';
+      if(prev===p.a){resEl.textContent='✅ Correcto';resEl.className='resultado ok';}
+      else{resEl.textContent='❌ Incorrecto. La correcta es la opción '+p.a;resEl.className='resultado ko';}
+    }else{
+      resEl.style.display='none';resEl.className='resultado';
+    }
+    updateStats();
+    if(!prev){
+      setTimeout(()=>{
+        let t='Pregunta '+p.n+'. '+p.q+'. ';
+        p.o.forEach((op,i)=>{t+='Opción '+(i+1)+': '+op+'. ';});
+        speak(t);
+        if(conversationMode)setTimeout(startListening,1200);
+      },250);
+    }
+  }
+
+  function answer(p,choose){
+    listState.answers[p.n]=choose;
+    saveState();
+    document.querySelectorAll('.opcion').forEach(b=>{
+      b.disabled=true;
+      const idx=parseInt(b.dataset.idx,10);
+      if(idx===p.a)b.classList.add('correct');
+      if(idx===choose&&choose!==p.a)b.classList.add('wrong');
+    });
+    const resEl=$('resultado');
+    if(choose===p.a){
+      resEl.textContent='✅ Correcto';resEl.className='resultado ok';
+      speak('Correcto');
+      if(conversationMode)setTimeout(()=>{
+        const list=getList();
+        if(currentIdx<list.length-1){currentIdx++;render();}
+        else speak('Has terminado. Enhorabuena.');
+      },2000);
+    }else{
+      resEl.textContent='❌ Incorrecto. La correcta es la opción '+p.a;
+      resEl.className='resultado ko';
+      speak('Incorrecto. La respuesta correcta es la opción '+p.a+': '+p.o[p.a-1]);
+      if(conversationMode)setTimeout(startListening,1500);
+    }
+    updateStats();
+  }
+
+  function updateStats(){
+    let ok=0,ko=0;
+    for(const k in listState.answers){
+      const n=parseInt(k,10);
+      const p=PREGUNTAS.find(x=>x.n===n);
+      if(!p)continue;
+      if(listState.answers[k]===p.a)ok++;else ko++;
+    }
+    $('okCount').textContent=ok;$('koCount').textContent=ko;
+    const list=getList();const p=list[currentIdx];
+    $('prog').textContent=(p?p.n:0)+'/300';
+  }
+
+  function initVoice(){
+    if(!SR){
+      $('micBtn').style.display='none';
+      return;
+    }
+    recognition=new SR();
+    recognition.lang='es-ES';
+    recognition.continuous=false;
+    recognition.interimResults=false;
+    recognition.maxAlternatives=3;
+    recognition.onresult=e=>{
+      const text=(e.results[0][0].transcript||'').toLowerCase().trim();
+      $('reconocido').textContent='Has dicho: "'+text+'"';
+      handleVoiceCommand(text);
+    };
+    recognition.onerror=e=>{
+      listening=false;
+      $('micBtn').classList.remove('escuchando');
+      if(e.error==='not-allowed'){
+        $('reconocido').textContent='Permiso denegado. El micrófono necesita conexión segura (HTTPS).';
+      }else if(e.error==='no-speech'){
+        $('reconocido').textContent='No te he oído. Pulsa 🎤 otra vez.';
+      }else{
+        $('reconocido').textContent='Error de micro: '+e.error;
+      }
+    };
+    recognition.onend=()=>{
+      listening=false;
+      $('micBtn').classList.remove('escuchando');
+    };
+  }
+  function startListening(){
+    if(!recognition)return;
+    if(listening)return;
+    try{recognition.start();listening=true;$('micBtn').classList.add('escuchando');$('reconocido').textContent='Escuchando…';}
+    catch(e){listening=false;}
+  }
+  function stopListening(){
+    if(!recognition||!listening)return;
+    try{recognition.stop();}catch(e){}
+    listening=false;$('micBtn').classList.remove('escuchando');
+  }
+
+  function handleVoiceCommand(text){
+    const list=getList();const p=list[currentIdx];if(!p)return;
+    const prev=listState.answers[p.n];
+
+    if(/(siguiente|avanzar|adelante)/.test(text)){$('next').click();return;}
+    if(/(atr[aá]s|anterior|volver)/.test(text)){$('prev').click();return;}
+    if(/(repetir|repite|otra vez|escuchar)/.test(text)){$('repeat').click();return;}
+    if(/(silencio|para|calla)/.test(text)){stopSpeak();return;}
+
+    if(prev){speak('Ya has respondido. Di siguiente o atrás.');return;}
+
+    let choice=null;
+    if(/(^|\s)(1|uno|primera?)(\s|$)/.test(text))choice=1;
+    else if(/(^|\s)(2|dos|segunda?)(\s|$)/.test(text))choice=2;
+    else if(/(^|\s)(3|tres|tercera?)(\s|$)/.test(text))choice=3;
+    else if(/(^|\s)(4|cuatro|cuarta?)(\s|$)/.test(text))choice=4;
+    else if(/opci[oó]n\s*(1|uno)/.test(text))choice=1;
+    else if(/opci[oó]n\s*(2|dos)/.test(text))choice=2;
+    else if(/opci[oó]n\s*(3|tres)/.test(text))choice=3;
+    else if(/opci[oó]n\s*(4|cuatro)/.test(text))choice=4;
+
+    if(choice){
+      const btn=document.querySelector('.opcion[data-idx="'+choice+'"]');
+      if(btn&&!btn.disabled)btn.click();
+    }else{
+      speak('No te he entendido. Di uno, dos, tres o cuatro.');
+    }
+  }
+
+  $('prev').onclick=()=>{if(currentIdx>0){currentIdx--;stopSpeak();stopListening();render();}};
+  $('next').onclick=()=>{
+    const list=getList();
+    if(currentIdx<list.length-1){currentIdx++;stopSpeak();stopListening();render();}
+    else speak('Última pregunta.');
+  };
+  $('repeat').onclick=()=>{
+    stopSpeak();
+    const list=getList();const p=list[currentIdx];if(!p)return;
+    let t='Pregunta '+p.n+'. '+p.q+'. ';
+    p.o.forEach((op,i)=>{t+='Opción '+(i+1)+': '+op+'. ';});
+    speak(t);
+  };
+  $('micBtn').onclick=()=>{listening?stopListening():startListening();};
+  $('failedMode').onclick=()=>{
+    failedOnly=!failedOnly;currentIdx=0;stopSpeak();stopListening();
+    $('failedMode').textContent=failedOnly?'📚 Ver todas':'📋 Solo falladas';
+    render();
+  };
+  $('restart').onclick=()=>{
+    if(confirm('¿Borrar todo el progreso?')){
+      listState.answers={};saveState();
+      currentIdx=0;stopSpeak();stopListening();render();
+    }
+  };
+  $('btnTheme').onclick=()=>{
+    const html=document.documentElement;
+    const next=html.getAttribute('data-theme')==='dark'?'light':'dark';
+    html.setAttribute('data-theme',next);
+    localStorage.setItem('test_scs_theme',next);
+  };
+  $('btnAudio').onclick=()=>{
+    audioOn=!audioOn;
+    $('btnAudio').textContent=audioOn?'🔊':'🔇';
+    if(!audioOn)stopSpeak();
+  };
+  $('btnConversation').onclick=()=>{
+    conversationMode=!conversationMode;
+    $('btnConversation').style.background=conversationMode?'var(--ok)':'';
+    $('btnConversation').style.color=conversationMode?'#fff':'';
+    if(conversationMode)startListening();else stopListening();
+  };
+
+  document.addEventListener('keydown',e=>{
+    if(['1','2','3','4'].includes(e.key)){
+      const list=getList();const p=list[currentIdx];if(!p)return;
+      const btn=document.querySelector('.opcion[data-idx="'+e.key+'"]');
+      if(btn&&!btn.disabled)btn.click();
+    }
+    if(e.key==='ArrowRight')$('next').click();
+    if(e.key==='ArrowLeft')$('prev').click();
+  });
+
+  const savedTheme=localStorage.getItem('test_scs_theme');
+  if(savedTheme)document.documentElement.setAttribute('data-theme',savedTheme);
+  loadState();
+  
+  // Iniciar voces
+  if(synth) {
+    synth.onvoiceschanged = cargarVoces;
+    cargarVoces(); // Por si ya están cargadas
+  }
+
+  if(checkLoad()){
+    initVoice();
+    render();
+  }
+  if('serviceWorker' in navigator){
+    navigator.serviceWorker.register('service-worker.js').catch(()=>{});
+  }
+})();
+</script>
+</body>
+</html>
