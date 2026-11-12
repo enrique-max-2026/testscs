@@ -38,9 +38,11 @@ main{padding:15px;max-width:900px;margin:0 auto}
 .btn-mic.escuchando{animation:pulse 1s infinite}
 @keyframes pulse{0%,100%{box-shadow:0 0 0 0 var(--mic)}50%{box-shadow:0 0 0 15px rgba(198,40,40,0)}}
 .reconocido{text-align:center;font-size:1rem;color:var(--btn);min-height:1.5em;margin-top:8px}
-.config-voz{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;align-items:center;margin-top:15px;padding:10px;background:var(--card);border-radius:10px;border:1px solid var(--border);font-size:0.9rem}
+.config-voz{display:flex;flex-direction:column;gap:12px;margin-top:15px;padding:15px;background:var(--card);border-radius:10px;border:1px solid var(--border);font-size:0.95rem}
+.config-row{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:center}
 .config-voz select{padding:8px;border-radius:8px;font-size:1rem;max-width:250px;border:1px solid var(--border);background:var(--bg);color:var(--fg);font-family:inherit}
 .config-voz button{padding:8px 12px;border-radius:8px;background:var(--btn);color:var(--btn-fg);border:none;cursor:pointer;font-size:0.9rem}
+.config-voz input[type="range"]{width:150px;cursor:pointer;}
 @media (max-width:600px){body{font-size:18px}.opcion{font-size:1rem}.enunciado{font-size:1.05rem}}
 </style>
 </head>
@@ -61,8 +63,13 @@ main{padding:15px;max-width:900px;margin:0 auto}
   </div>
   
   <div class="config-voz" id="panelVoz">
-    <label>Voz: <select id="voiceSelect"></select></label>
-    <button id="testVoice">▶ Probar voz</button>
+    <div class="config-row">
+      <label>Voz: <select id="voiceSelect"></select></label>
+      <button id="testVoice">▶ Probar voz</button>
+    </div>
+    <div class="config-row">
+      <label>Velocidad: <input type="range" id="rateSlider" min="0.5" max="1.5" step="0.1" value="0.95"> <span id="rateValue">0.95x</span></label>
+    </div>
   </div>
 
   <div class="controles">
@@ -92,6 +99,8 @@ main{padding:15px;max-width:900px;margin:0 auto}
   let selectedVoice=null;
 
   const $ = id => document.getElementById(id);
+  const rateSlider = $('rateSlider');
+  const rateValue = $('rateValue');
 
   function loadState(){
     try{const s=JSON.parse(localStorage.getItem(S_KEY));if(s&&s.answers)Object.assign(listState,s);}catch(e){}
@@ -102,6 +111,18 @@ main{padding:15px;max-width:900px;margin:0 auto}
     return PREGUNTAS.filter(p=>listState.answers[p.n]==='ko');
   }
 
+  // --- VELOCIDAD ---
+  const savedRate = localStorage.getItem('test_scs_rate');
+  if(savedRate) {
+    rateSlider.value = savedRate;
+    rateValue.textContent = savedRate + 'x';
+  }
+  
+  rateSlider.oninput = () => {
+    localStorage.setItem('test_scs_rate', rateSlider.value);
+    rateValue.textContent = rateSlider.value + 'x';
+  };
+
   // --- GESTIÓN DE VOCES ---
   function cargarVoces(){
     if(!synth)return;
@@ -109,16 +130,13 @@ main{padding:15px;max-width:900px;margin:0 auto}
     const selector = $('voiceSelect');
     selector.innerHTML = '';
     
-    // Filtrar voces en español
     const vocesEsp = voces.filter(v => v.lang.startsWith('es'));
     if(vocesEsp.length === 0) {
-        // Si no hay voces en español, poner todas
         voces.forEach(v => selector.add(new Option(v.name, v.name)));
     } else {
         vocesEsp.forEach(v => selector.add(new Option(v.name, v.name)));
     }
 
-    // Intentar cargar la voz guardada
     const guardada = localStorage.getItem('test_scs_voice');
     if(guardada) {
         for(let i=0; i<selector.options.length; i++){
@@ -128,7 +146,6 @@ main{padding:15px;max-width:900px;margin:0 auto}
             }
         }
     } else {
-        // Buscar automáticamente una voz masculina (Pablo, Raul, Jorge, Diego, etc.)
         const masculinas = ["pablo", "raul", "jorge", "diego", "enrique", "hombre", "male"];
         for(let i=0; i<selector.options.length; i++){
             const nombre = selector.options[i].value.toLowerCase();
@@ -155,8 +172,8 @@ main{padding:15px;max-width:900px;margin:0 auto}
     const u = new SpeechSynthesisUtterance("Hola, esta es una prueba de voz. Pregunta número uno. Opción dos.");
     if(selectedVoice) u.voice = selectedVoice;
     u.lang = 'es-ES';
-    u.pitch = 0.8; // Tono más grave (0 es el más grave, 2 el más agudo)
-    u.rate = 0.95; // Velocidad ligeramente pausada
+    u.pitch = 0.8;
+    u.rate = parseFloat(rateSlider.value);
     synth.speak(u);
   };
 
@@ -167,8 +184,8 @@ main{padding:15px;max-width:900px;margin:0 auto}
     const u=new SpeechSynthesisUtterance(text);
     if(selectedVoice) u.voice = selectedVoice;
     u.lang='es-ES';
-    u.pitch=0.8; // Voz más grave y profunda
-    u.rate=0.95; // Un poco más lenta para que sea expresiva
+    u.pitch=0.8;
+    u.rate=parseFloat(rateSlider.value);
     synth.speak(u);
   }
   function stopSpeak(){if(synth)synth.cancel();}
@@ -403,10 +420,9 @@ main{padding:15px;max-width:900px;margin:0 auto}
   if(savedTheme)document.documentElement.setAttribute('data-theme',savedTheme);
   loadState();
   
-  // Iniciar voces
   if(synth) {
     synth.onvoiceschanged = cargarVoces;
-    cargarVoces(); // Por si ya están cargadas
+    cargarVoces();
   }
 
   if(checkLoad()){
