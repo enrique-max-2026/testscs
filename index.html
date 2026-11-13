@@ -1,172 +1,320 @@
 <!DOCTYPE html>
-<html lang="es" data-theme="light">
+<html lang="es" data-theme="dark">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 <title>Test SCS · 300</title>
-<meta name="theme-color" content="#0055aa">
+<meta name="theme-color" content="#121417">
 <link rel="manifest" href="manifest.json">
 <link rel="icon" href="icon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="icon.svg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400;1,700&display=swap" rel="stylesheet">
 <style>
-:root{--bg:#fff;--fg:#111;--card:#f4f4f4;--btn:#0055aa;--btn-fg:#fff;--ok:#1b7a1b;--ko:#b00020;--border:#ccc;--mic:#c62828;--doubt:#d97706;--exam:#7c3aed;}
-[data-theme="dark"]{--bg:#111;--fg:#f0f0f0;--card:#1e1e1e;--btn:#3399ff;--btn-fg:#000;--ok:#4caf50;--ko:#ff5252;--border:#444;--mic:#ff5252;--doubt:#f59e0b;--exam:#a78bfa;}
-*{box-sizing:border-box}
-body{margin:0;background:var(--bg);color:var(--fg);font-family:system-ui,-apple-system,"Segoe UI",Arial,sans-serif;font-size:20px;line-height:1.5;display:flex;flex-direction:column;min-height:100vh;}
+:root {
+    --bg: #121417;
+    --surface: #1E2126;
+    --surface-hover: #2A2D33;
+    --text: #F5EFE6;
+    --text-muted: #9CA3AF;
+    --primary: #3B82F6;
+    --primary-hover: #2563EB;
+    --success: #10B981;
+    --error: #EF4444;
+    --warning: #F59E0B;
+    --purple: #8B5CF6;
+    --border-radius: 12px;
+    --font-main: 'Atkinson Hyperlegible', system-ui, -apple-system, sans-serif;
+}
+[data-theme="light"] {
+    --bg: #F5EFE6;
+    --surface: #FFFFFF;
+    --surface-hover: #F0F0F0;
+    --text: #121417;
+    --text-muted: #4B5563;
+    --primary: #0055aa;
+    --primary-hover: #004488;
+}
 
-/* CABECERA */
-header{background:var(--bg);border-bottom:2px solid var(--border);padding:10px;display:flex;flex-direction:column;gap:8px;z-index:10}
-.header-row{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between}
-.header-row h1{font-size:1.1rem;margin:0;}
-.header-row .stats{font-size:0.9rem;font-weight:bold;margin-right:auto;padding-left:10px;}
-.header-row button{font-size:0.9rem;padding:8px 12px;cursor:pointer;border-radius:8px;border:2px solid var(--border);background:var(--card);color:var(--fg);font-weight:bold;}
-.timer-display{font-size:1.1rem;font-weight:bold;color:var(--exam);display:none;padding:5px 10px;background:rgba(124,58,237,0.1);border-radius:8px;}
+*{box-sizing:border-box; -webkit-tap-highlight-color: transparent;}
+body{
+    margin:0; background:var(--bg); color:var(--text);
+    font-family: var(--font-main); font-size: 21px; line-height: 1.6;
+    display:flex; flex-direction:column; align-items:center; min-height:100vh;
+}
 
-.jump-box{display:flex;align-items:center;gap:5px;background:var(--card);padding:5px 10px;border-radius:8px;border:1px solid var(--border);}
-.jump-box input{width:60px;padding:5px;border-radius:5px;border:1px solid var(--border);font-size:0.9rem;text-align:center;background:var(--bg);color:var(--fg);}
-.jump-box button{background:var(--btn);color:var(--btn-fg);border:none;padding:5px 10px;border-radius:5px;cursor:pointer;}
+/* CONTENEDOR CENTRAL (Evita el ancho infinito) */
+.app-container {
+    width: 100%; max-width: 880px; padding: 20px;
+    display: flex; flex-direction: column; gap: 20px;
+}
 
-.header-filters{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;align-items:center;}
-.filter-btn{flex:1;min-width:120px;max-width:200px;padding:10px;border-radius:8px;border:2px solid var(--border);background:var(--card);color:var(--fg);font-weight:bold;cursor:pointer;font-size:0.95rem;}
-.filter-btn.active{background:var(--btn);color:var(--btn-fg);border-color:var(--btn);}
-.filter-btn.doubt.active{background:var(--doubt);border-color:var(--doubt);color:#fff;}
-.filter-btn.failed.active{background:var(--ko);border-color:var(--ko);color:#fff;}
-.filter-btn.exam.active{background:var(--exam);border-color:var(--exam);color:#fff;}
-.exam-toggle{display:flex;align-items:center;gap:5px;font-size:0.9rem;font-weight:bold;cursor:pointer;background:var(--card);padding:8px 12px;border-radius:8px;border:1px solid var(--border);}
+/* CABECERA Y CONTROLES GLOBALES */
+header {
+    display: flex; flex-direction: column; gap: 15px;
+    background: var(--surface); padding: 15px 20px; border-radius: var(--border-radius);
+    box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+}
+.header-top { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 10px; }
+.header-title { display: flex; align-items: center; gap: 15px; flex-wrap: wrap; }
+.header-title h1 { font-size: 1.3rem; margin: 0; font-weight: 700; }
+.stats { font-size: 0.95rem; font-weight: 700; color: var(--text-muted); display: flex; gap: 10px; }
+.stat-ok { color: var(--success); }
+.stat-ko { color: var(--error); }
+.stat-approved { color: var(--warning); }
 
-.header-config{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:center;font-size:0.9rem;background:var(--card);padding:8px;border-radius:10px;border:1px solid var(--border)}
-.header-config select{padding:6px;border-radius:6px;font-size:0.9rem;border:1px solid var(--border);background:var(--bg);color:var(--fg);max-width:150px;}
-.header-config input[type="range"]{width:90px;cursor:pointer;}
-.header-config button{padding:6px 10px;border-radius:6px;background:var(--btn);color:var(--btn-fg);border:none;cursor:pointer;font-size:0.85rem;font-weight:bold;}
+.header-actions { display: flex; gap: 10px; align-items: center; }
+.btn-icon {
+    background: transparent; border: none; color: var(--text-muted); cursor: pointer;
+    padding: 8px; border-radius: 8px; display: flex; align-items: center; justify-content: center;
+    transition: background 0.2s, color 0.2s;
+}
+.btn-icon:hover { background: var(--surface-hover); color: var(--text); }
+.btn-icon.danger:hover { background: rgba(239, 68, 68, 0.15); color: var(--error); }
+.icon { width: 24px; height: 24px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
 
-main{padding:15px;max-width:900px;margin:0 auto;display:flex;flex-direction:column;gap:15px;flex:1;width:100%;}
-.pregunta{background:var(--card);border-radius:12px;padding:15px;border:2px solid transparent;}
-.pregunta.is-doubt{border-color:var(--doubt);}
-.question-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;}
-.num{font-weight:bold;font-size:1.1rem;}
-.doubt-btn{background:var(--bg);border:1px solid var(--border);color:var(--fg);padding:5px 10px;border-radius:8px;font-size:0.9rem;cursor:pointer;font-weight:bold;}
-.doubt-btn.active{background:var(--doubt);color:#fff;border-color:var(--doubt);}
+/* FILTROS Y CONFIGURACIÓN */
+.toolbar { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; }
+.filter-btn {
+    background: var(--bg); border: none; color: var(--text); font-family: var(--font-main);
+    padding: 12px 20px; border-radius: var(--border-radius); font-weight: 700; font-size: 1rem;
+    cursor: pointer; display: flex; align-items: center; gap: 8px; flex: 1; justify-content: center;
+    min-width: 140px; transition: background 0.2s, transform 0.1s;
+}
+.filter-btn:active { transform: scale(0.98); }
+.filter-btn.active { background: var(--primary); color: #fff; }
+.filter-btn.exam { color: var(--purple); }
+.filter-btn.exam.active { background: var(--purple); color: #fff; }
+.filter-btn.doubt { color: var(--warning); }
+.filter-btn.doubt.active { background: var(--warning); color: #fff; }
+.filter-btn.failed { color: var(--error); }
+.filter-btn.failed.active { background: var(--error); color: #fff; }
 
-.enunciado{font-size:1.15rem;margin-bottom:15px}
-.opciones{display:flex;flex-direction:column;gap:10px}
-.opcion{background:var(--bg);color:var(--fg);border:2px solid var(--border);border-radius:10px;padding:15px;font-size:1.1rem;text-align:left;cursor:pointer;display:flex;gap:10px;align-items:flex-start;font-family:inherit}
-.opcion .letra{font-weight:bold;font-size:1.3rem;min-width:2rem;color:var(--btn)}
-.opcion.correct{border-color:var(--ok);background:rgba(76,175,80,.2)}
-.opcion.wrong{border-color:var(--ko);background:rgba(255,82,82,.2)}
-.opcion:disabled{cursor:default}
-.resultado{margin-top:15px;font-size:1.2rem;font-weight:bold;padding:10px;border-radius:10px;display:none}
-.resultado.ok{background:rgba(76,175,80,.25);color:var(--ok);display:block}
-.resultado.ko{background:rgba(255,82,82,.25);color:var(--ko);display:block}
+.config-bar {
+    display: flex; flex-wrap: wrap; gap: 15px; align-items: center; justify-content: space-between;
+    background: var(--bg); padding: 10px 15px; border-radius: var(--border-radius); font-size: 0.95rem;
+}
+.config-group { display: flex; align-items: center; gap: 10px; font-weight: 700; }
+select {
+    padding: 8px 12px; border-radius: 8px; border: none; background: var(--surface);
+    color: var(--text); font-family: var(--font-main); font-size: 0.95rem; max-width: 180px;
+}
+input[type="range"] { width: 100px; accent-color: var(--primary); cursor: pointer; }
+input[type="checkbox"] { width: 20px; height: 20px; accent-color: var(--primary); cursor: pointer; }
+.btn-test-voice {
+    background: var(--surface-hover); border: none; color: var(--text); padding: 8px 15px;
+    border-radius: 8px; cursor: pointer; font-weight: 700; font-family: var(--font-main);
+}
 
-/* FILA INFERIOR */
-.bottom-controls {display: flex;flex-direction: row;justify-content: center;align-items: center;gap: 15px;margin-top: 20px;margin-bottom: 10px;flex-wrap: wrap;}
-.btn-mic {width: 130px;height: 130px;border-radius: 50%;font-size: 5rem;background: var(--mic);color: white;border: none;box-shadow: 0 6px 15px rgba(0,0,0,0.4);cursor: pointer;display: flex;align-items: center;justify-content: center;transition: transform 0.1s;}
-.btn-mic:active { transform: scale(0.95); }
+/* PREGUNTA (Superficies sólidas, sin bordes finos) */
+main { display: flex; flex-direction: column; gap: 20px; }
+.card {
+    background: var(--surface); border-radius: var(--border-radius); padding: 25px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.1); display: flex; flex-direction: column; gap: 20px;
+}
+.card.is-doubt { box-shadow: 0 0 0 3px var(--warning); }
+.question-header { display: flex; justify-content: space-between; align-items: center; }
+.num { font-size: 1.1rem; font-weight: 700; color: var(--text-muted); }
+.doubt-btn {
+    background: var(--bg); border: none; color: var(--text); padding: 8px 15px;
+    border-radius: 8px; font-weight: 700; font-family: var(--font-main); cursor: pointer;
+    display: flex; align-items: center; gap: 8px;
+}
+.doubt-btn.active { background: var(--warning); color: #121417; }
+
+.enunciado { font-size: 1.35rem; font-weight: 700; margin-bottom: 5px; line-height: 1.4; }
+
+/* OPCIONES (Bloques sólidos) */
+.opciones { display: flex; flex-direction: column; gap: 12px; }
+.opcion {
+    background: var(--bg); border: none; color: var(--text); text-align: left;
+    padding: 18px 20px; border-radius: var(--border-radius); font-family: var(--font-main);
+    font-size: 1.15rem; cursor: pointer; display: flex; gap: 15px; align-items: flex-start;
+    transition: background 0.2s, transform 0.1s;
+}
+.opcion:not(:disabled):hover { background: var(--surface-hover); }
+.opcion:active { transform: scale(0.99); }
+.opcion .letra { font-weight: 700; font-size: 1.4rem; color: var(--primary); min-width: 30px; }
+.opcion.correct { background: rgba(16, 185, 129, 0.2); box-shadow: inset 0 0 0 2px var(--success); }
+.opcion.wrong { background: rgba(239, 68, 68, 0.2); box-shadow: inset 0 0 0 2px var(--error); }
+.opcion:disabled { cursor: default; }
+
+.resultado { font-size: 1.2rem; font-weight: 700; padding: 15px; border-radius: var(--border-radius); display: none; text-align: center; }
+.resultado.ok { background: rgba(16, 185, 129, 0.15); color: var(--success); display: block; }
+.resultado.ko { background: rgba(239, 68, 68, 0.15); color: var(--error); display: block; }
+
+/* BOTONERA INFERIOR (Reproductor) */
+.bottom-controls {
+    display: flex; justify-content: center; align-items: center; gap: 20px; flex-wrap: wrap;
+    margin-top: 10px; margin-bottom: 30px;
+}
+.btn-mic {
+    width: 110px; height: 110px; border-radius: 50%; background: var(--error);
+    color: white; border: none; cursor: pointer; box-shadow: 0 8px 25px rgba(239,68,68,0.4);
+    display: flex; align-items: center; justify-content: center; transition: transform 0.1s;
+}
+.btn-mic:active { transform: scale(0.92); }
 .btn-mic.escuchando { animation: pulse 1.5s infinite; }
-.btn-mic.handfree { background: var(--ok); }
-@keyframes pulse {0%{box-shadow:0 0 0 0 rgba(198,40,40,0.7)}70%{box-shadow:0 0 0 30px rgba(198,40,40,0)}100%{box-shadow:0 0 0 0 rgba(198,40,40,0)}}
+.btn-mic.handfree { background: var(--success); box-shadow: 0 8px 25px rgba(16,185,129,0.4); }
+@keyframes pulse {0%{box-shadow:0 0 0 0 rgba(239,68,68,0.7)}70%{box-shadow:0 0 0 25px rgba(239,68,68,0)}100%{box-shadow:0 0 0 0 rgba(239,68,68,0)}}
+.btn-mic svg { width: 45px; height: 45px; }
 
-.btn-normal {height: 70px;padding: 0 25px;border-radius: 12px;font-size: 1.3rem;background: var(--card);color: var(--fg);border: 2px solid var(--border);font-weight: bold;cursor: pointer;}
-.btn-normal.primary {background: var(--btn);color: var(--btn-fg);border: none;}
+.btn-normal {
+    height: 70px; min-width: 70px; padding: 0 25px; border-radius: var(--border-radius);
+    background: var(--surface); color: var(--text); border: none; font-weight: 700;
+    font-family: var(--font-main); font-size: 1.1rem; cursor: pointer;
+    display: flex; align-items: center; justify-content: center; gap: 10px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1); transition: background 0.2s;
+}
+.btn-normal:hover { background: var(--surface-hover); }
+.btn-normal.primary { background: var(--primary); color: #fff; }
+.btn-normal.primary:hover { background: var(--primary-hover); }
 
-.status-area{text-align:center;display:flex;flex-direction:column;align-items:center;gap:10px;margin-bottom:20px;}
-#micStatus{font-size:1.1rem;font-weight:bold;color:var(--btn);min-height:1.5em;}
-.switch-label{display:flex;align-items:center;gap:8px;font-size:1.1rem;font-weight:bold;cursor:pointer;background:var(--card);padding:10px 20px;border-radius:20px;border:1px solid var(--border)}
-.switch-label input{width:24px;height:24px;cursor:pointer}
+.status-area { text-align: center; display: flex; flex-direction: column; align-items: center; gap: 15px; margin-bottom: 20px; }
+#micStatus { font-size: 1.1rem; font-weight: 700; color: var(--primary); min-height: 1.5em; }
+.switch-label {
+    display: flex; align-items: center; gap: 10px; font-size: 1.1rem; font-weight: 700;
+    cursor: pointer; background: var(--surface); padding: 12px 24px; border-radius: 30px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+}
 
-.summary-screen{text-align:center;padding:30px;background:var(--card);border-radius:12px;display:none;}
-.summary-screen h2{font-size:1.5rem;color:var(--ok);margin-bottom:15px;}
-.summary-screen p{font-size:1.1rem;margin-bottom:20px;}
-.summary-actions{display:flex;flex-direction:column;gap:15px;align-items:center;}
-.summary-actions button{padding:15px 20px;font-size:1.1rem;border-radius:10px;border:none;cursor:pointer;font-weight:bold;width:100%;max-width:300px;}
-.btn-repasar{background:var(--btn);color:var(--btn-fg);}
-.btn-todas{background:var(--card);color:var(--fg);border:2px solid var(--border)!important;}
-.btn-exam{background:var(--exam);color:#fff;}
+/* PANTALLA RESUMEN */
+.summary-screen { text-align: center; background: var(--surface); padding: 40px 20px; border-radius: var(--border-radius); display: none; flex-direction: column; align-items: center; gap: 20px; }
+.summary-screen h2 { font-size: 1.8rem; color: var(--success); margin: 0; }
+.summary-screen p { font-size: 1.2rem; margin: 0; color: var(--text-muted); }
+.summary-actions { display: flex; flex-direction: column; gap: 15px; width: 100%; max-width: 350px; }
+.summary-actions button { padding: 18px; font-size: 1.1rem; border-radius: var(--border-radius); border: none; cursor: pointer; font-weight: 700; font-family: var(--font-main); }
+.btn-repasar { background: var(--primary); color: #fff; }
+.btn-todas { background: var(--bg); color: var(--text); }
+.btn-exam { background: var(--purple); color: #fff; }
 
-@media (max-width:700px){
-  .btn-mic { width: 100px; height: 100px; font-size: 4rem; }
-  .btn-normal { height: 60px; font-size: 1rem; padding: 0 15px; }
-  .bottom-controls { gap: 10px; }
-  .header-filters{flex-direction:column;}
-  .filter-btn{max-width:100%;}
+/* CABECERA DEL EXAMEN */
+.timer-display { font-size: 1.2rem; font-weight: 700; color: var(--purple); display: none; padding: 8px 15px; background: rgba(139,92,246,0.1); border-radius: var(--border-radius); align-items: center; gap: 8px; }
+.jump-box { display: flex; align-items: center; gap: 8px; background: var(--bg); padding: 8px 15px; border-radius: var(--border-radius); font-weight: 700; font-size: 0.95rem; }
+.jump-box input { width: 60px; padding: 8px; border-radius: 8px; border: none; background: var(--surface); color: var(--text); text-align: center; font-size: 1rem; font-family: var(--font-main); }
+.jump-box button { background: var(--primary); color: #fff; border: none; padding: 8px 12px; border-radius: 8px; cursor: pointer; font-weight: 700; font-family: var(--font-main); }
+
+@media (max-width: 700px) {
+    .app-container { padding: 10px; }
+    .header-actions { width: 100%; justify-content: space-between; }
+    .btn-mic { width: 90px; height: 90px; }
+    .btn-mic svg { width: 35px; height: 35px; }
+    .btn-normal { height: 60px; font-size: 1rem; padding: 0 15px; }
+    .opcion { font-size: 1.05rem; padding: 15px; }
+    .enunciado { font-size: 1.2rem; }
+    .toolbar { flex-direction: column; }
+    .filter-btn { min-width: 100%; }
 }
 </style>
 </head>
 <body>
-<header>
-  <div class="header-row">
-    <h1>Test SCS · <span id="prog">0/300</span></h1>
-    <div class="stats">✅ <span id="okCount">0</span> · ❌ <span id="koCount">0</span> · 🏆 <span id="approvedCount">0</span>/300</div>
-    <div class="timer-display" id="timerDisplay">⏱️ 00:00</div>
-    <div class="jump-box">
-      <label>Ir a:</label>
-      <input type="number" id="jumpInput" min="1" max="300" value="1">
-      <button id="jumpBtn">Ir</button>
-    </div>
-    <button id="btnTheme" title="Tema">🌓</button>
-    <button id="btnAudio" title="Voz">🔊</button>
-  </div>
-  
-  <div class="header-filters">
-    <button id="filterAll" class="filter-btn active">📚 Todas</button>
-    <button id="filterFailed" class="filter-btn failed">📋 Falladas</button>
-    <button id="filterDoubt" class="filter-btn doubt">🤔 Dudosas</button>
-    <button id="filterExam" class="filter-btn exam">📝 Simulacro (50)</button>
-    <label class="exam-toggle">
-      <input type="checkbox" id="timerToggle"> ⏱️ Cronómetro
-    </label>
-  </div>
-  <div class="header-filters">
-    <button id="restart" class="filter-btn" style="max-width:100%;">🔄 Reiniciar todo el progreso</button>
-  </div>
+<div class="app-container">
+    <header>
+        <div class="header-top">
+            <div class="header-title">
+                <h1>Test SCS</h1>
+                <div class="stats">
+                    <span class="stat-ok" title="Aciertos">✅ <span id="okCount">0</span></span>
+                    <span class="stat-ko" title="Fallos">❌ <span id="koCount">0</span></span>
+                    <span class="stat-approved" title="Aprobadas">🏆 <span id="approvedCount">0</span>/300</span>
+                </div>
+            </div>
+            
+            <div class="header-actions">
+                <div class="timer-display" id="timerDisplay">
+                    <svg class="icon" viewBox="0 0 24 24"><path d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                    <span id="timerText">00:00</span>
+                </div>
+                <div class="jump-box">
+                    <span>Ir a:</span>
+                    <input type="number" id="jumpInput" min="1" max="300" value="1">
+                    <button id="jumpBtn">Ir</button>
+                </div>
+                <button id="btnTheme" class="btn-icon" title="Cambiar tema">
+                    <svg class="icon" viewBox="0 0 24 24"><path d="M21.752 15.002A9.718 9.718 0 0118 15.75c-5.385 0-9.75-4.365-9.75-9.75 0-1.33.266-2.597.748-3.752A9.753 9.753 0 003 11.25C3 16.635 7.365 21 12.75 21a9.753 9.753 0 009.002-5.998z" /></svg>
+                </button>
+                <button id="btnAudio" class="btn-icon" title="Activar/Desactivar voz">
+                    <svg class="icon" viewBox="0 0 24 24"><path d="M19.114 5.636a9 9 0 010 12.728M16.463 8.288a5.25 5.25 0 010 7.424M6.75 8.25l4.72-4.72a.75.75 0 011.28.53v15.88a.75.75 0 01-1.28.53l-4.72-4.72H4.51c-.88 0-1.704-.507-1.938-1.354A9.01 9.01 0 012.25 12c0-.83.112-1.633.322-2.396C2.806 8.756 3.63 8.25 4.51 8.25H6.75z" /></svg>
+                </button>
+                <button id="restart" class="btn-icon danger" title="Reiniciar todo el progreso">
+                    <svg class="icon" viewBox="0 0 24 24"><path d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99" /></svg>
+                </button>
+            </div>
+        </div>
 
-  <div class="header-config">
-    <label>Voz: <select id="voiceSelect"></select></label>
-    <label>Vel: <input type="range" id="rateSlider" min="0.5" max="1.5" step="0.1" value="0.95"> <span id="rateValue">0.95x</span></label>
-    <button id="testVoice">▶ Probar voz</button>
-  </div>
-</header>
+        <div class="toolbar">
+            <button id="filterAll" class="filter-btn active">Todas</button>
+            <button id="filterFailed" class="filter-btn failed">Falladas</button>
+            <button id="filterDoubt" class="filter-btn doubt">Dudosas</button>
+            <button id="filterExam" class="filter-btn exam">Simulacro (50)</button>
+            <label class="filter-btn" style="flex: 0.5; min-width: 100px;">
+                <input type="checkbox" id="timerToggle"> Cronómetro
+            </label>
+        </div>
 
-<main>
-  <div class="pregunta" id="questionCard">
-    <div class="question-header">
-      <div class="num" id="num">Cargando…</div>
-      <div style="display:flex; gap:5px;">
-        <button id="resetBtn" class="doubt-btn" title="Volver a contestar esta pregunta">🔄 Reintentar</button>
-        <button id="doubtBtn" class="doubt-btn">🤔 Marcar dudosa</button>
-      </div>
-    </div>
-    <div class="enunciado" id="enunciado"></div>
-    <div class="opciones" id="opciones"></div>
-    <div class="resultado" id="resultado"></div>
-  </div>
-  
-  <!-- Pantalla de fin de ronda / examen -->
-  <div class="summary-screen" id="summaryScreen">
-    <h2 id="summaryTitle">🎉 ¡Has completado esta ronda!</h2>
-    <p id="summaryText">Puedes repasar las preguntas que has fallado o dudado tantas veces como quieras.</p>
-    <div class="summary-actions">
-      <button id="btnRepeatRound" class="btn-repasar">🔄 Repetir ronda de repaso</button>
-      <button id="btnNewExam" class="btn-exam">📝 Hacer otro Simulacro</button>
-      <button id="btnGoAll" class="btn-todas">📚 Ir a todas las preguntas</button>
-    </div>
-  </div>
-  
-  <div class="bottom-controls" id="controlsArea">
-    <button id="micBtn" class="btn-mic" title="Hablar">🎤</button>
-    <button id="repeat" class="btn-normal">🔁 Repetir</button>
-    <button id="prev" class="btn-normal">◀ Anterior</button>
-    <button id="next" class="btn-normal primary">Siguiente ▶</button>
-  </div>
+        <div class="config-bar">
+            <div class="config-group">
+                <span>Voz:</span>
+                <select id="voiceSelect"></select>
+            </div>
+            <div class="config-group">
+                <span>Vel:</span>
+                <input type="range" id="rateSlider" min="0.5" max="1.5" step="0.1" value="0.95">
+                <span id="rateValue">0.95x</span>
+            </div>
+            <button id="testVoice" class="btn-test-voice">Probar voz</button>
+        </div>
+    </header>
 
-  <div class="status-area" id="statusArea">
-    <div id="micStatus">Pulsa el micro para hablar</div>
-    <label class="switch-label">
-      <input type="checkbox" id="handsfreeToggle">
-      Modo manos libres (escucha sola)
-    </label>
-  </div>
-</main>
+    <main>
+        <div class="card" id="questionCard">
+            <div class="question-header">
+                <div class="num" id="num">Cargando…</div>
+                <div style="display:flex; gap:8px;">
+                    <button id="resetBtn" class="doubt-btn" style="display:none;" title="Volver a contestar">Reintentar</button>
+                    <button id="doubtBtn" class="doubt-btn">Marcar dudosa</button>
+                </div>
+            </div>
+            <div class="enunciado" id="enunciado"></div>
+            <div class="opciones" id="opciones"></div>
+            <div class="resultado" id="resultado"></div>
+        </div>
+
+        <div class="summary-screen" id="summaryScreen">
+            <h2 id="summaryTitle">🎉 ¡Has completado esta ronda!</h2>
+            <p id="summaryText">Puedes repasar las preguntas que has fallado o dudado tantas veces como quieras.</p>
+            <div class="summary-actions">
+                <button id="btnRepeatRound" class="btn-repasar">🔄 Repetir ronda</button>
+                <button id="btnNewExam" class="btn-exam">📝 Hacer otro Simulacro</button>
+                <button id="btnGoAll" class="btn-todas">📚 Ir a todas las preguntas</button>
+            </div>
+        </div>
+
+        <div class="bottom-controls" id="controlsArea">
+            <button id="micBtn" class="btn-mic" title="Hablar">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"></path><path d="M19 10v2a7 7 0 0 1-14 0v-2"></path><line x1="12" x2="12" y1="19" y2="22"></line></svg>
+            </button>
+            <button id="repeat" class="btn-normal">
+                <svg class="icon" viewBox="0 0 24 24"><path d="M21 12a9 9 0 11-9-9c2.52 0 4.85.94 6.6 2.48L21 8" /><path d="M21 3v5h-5" /></svg>
+            </button>
+            <button id="prev" class="btn-normal">
+                <svg class="icon" viewBox="0 0 24 24"><path d="M15 18l-6-6 6-6" /></svg>
+            </button>
+            <button id="next" class="btn-normal primary">
+                <svg class="icon" viewBox="0 0 24 24"><path d="M9 18l6-6-6-6" /></svg>
+            </button>
+        </div>
+
+        <div class="status-area" id="statusArea">
+            <div id="micStatus">Pulsa el micrófono para hablar</div>
+            <label class="switch-label">
+                <input type="checkbox" id="handsfreeToggle">
+                Modo manos libres
+            </label>
+        </div>
+    </main>
+</div>
 
 <script src="preguntas.js"></script>
 <script>
@@ -178,9 +326,8 @@ main{padding:15px;max-width:900px;margin:0 auto;display:flex;flex-direction:colu
   let currentList = []; 
   let currentIdx = 0;
   let currentFilter='all'; 
-  
-  // Guarda las respuestas solo de la ronda actual
   let roundAnswers = {};
+  let examScore = 0;
   
   let audioOn=true, handsfree=false, listening=false, isSpeaking=false;
   let timerInterval = null;
@@ -200,6 +347,7 @@ main{padding:15px;max-width:900px;margin:0 auto;display:flex;flex-direction:colu
   const resetBtn = $('resetBtn');
   const timerToggle = $('timerToggle');
   const timerDisplay = $('timerDisplay');
+  const timerText = $('timerText');
   
   const questionCard = $('questionCard');
   const summaryScreen = $('summaryScreen');
@@ -230,7 +378,7 @@ main{padding:15px;max-width:900px;margin:0 auto;display:flex;flex-direction:colu
   }
 
   function startNewRound() {
-    roundAnswers = {}; // Resetea las respuestas de la vista actual
+    roundAnswers = {};
     currentList = getFilteredQuestions();
     currentIdx = 0;
     stopTimer();
@@ -253,8 +401,8 @@ main{padding:15px;max-width:900px;margin:0 auto;display:flex;flex-direction:colu
     const shuffled = [...unapproved].sort(() => 0.5 - Math.random());
     currentList = shuffled.slice(0, 50);
     currentIdx = 0;
-    
-    roundAnswers = {}; // Resetea las respuestas del simulacro
+    roundAnswers = {};
+    examScore = 0;
     
     currentFilter = 'exam';
     $('filterAll').classList.remove('active');
@@ -296,37 +444,24 @@ main{padding:15px;max-width:900px;margin:0 auto;display:flex;flex-direction:colu
   $('btnGoAll').onclick = () => setFilter('all');
   
   $('btnRepeatRound').onclick = () => {
-    if(currentFilter === 'exam') {
-        startSimulacro(); 
-    } else {
-        startNewRound();
-    }
+    if(currentFilter === 'exam') { startSimulacro(); } 
+    else { startNewRound(); }
   };
 
   $('jumpBtn').onclick = () => {
     const targetNum = parseInt($('jumpInput').value, 10);
-    if(isNaN(targetNum) || targetNum < 1 || targetNum > 300) {
-        alert("Por favor, introduce un número entre 1 y 300.");
-        return;
-    }
+    if(isNaN(targetNum) || targetNum < 1 || targetNum > 300) { return; }
     
     let idx = currentList.findIndex(p => p.n === targetNum);
-    
     if(idx === -1) {
-        if(currentFilter === 'all') {
-            alert("Pregunta no encontrada.");
-            return;
+        if(currentFilter !== 'all') {
+            setFilter('all');
+            idx = currentList.findIndex(p => p.n === targetNum);
         }
-        alert("Esa pregunta no está en este filtro. Cambiando a 'Todas'...");
-        setFilter('all');
-        idx = currentList.findIndex(p => p.n === targetNum);
     }
-    
     if(idx !== -1) {
         currentIdx = idx;
-        stopSpeak();
-        stopListening();
-        render();
+        stopSpeak(); stopListening(); render();
     }
   };
 
@@ -334,65 +469,44 @@ main{padding:15px;max-width:900px;margin:0 auto;display:flex;flex-direction:colu
   function startTimer() {
     stopTimer();
     timeElapsed = 0;
-    timerDisplay.style.display = 'block';
-    timerDisplay.textContent = '⏱️ 00:00';
-    
+    timerDisplay.style.display = 'flex';
+    timerText.textContent = '00:00';
     timerInterval = setInterval(() => {
         timeElapsed++;
         const mins = String(Math.floor(timeElapsed / 60)).padStart(2, '0');
         const secs = String(timeElapsed % 60).padStart(2, '0');
-        timerDisplay.textContent = `⏱️ ${mins}:${secs}`;
+        timerText.textContent = `${mins}:${secs}`;
     }, 1000);
   }
-
   function stopTimer() {
-    if (timerInterval) {
-        clearInterval(timerInterval);
-        timerInterval = null;
-    }
+    if (timerInterval) { clearInterval(timerInterval); timerInterval = null; }
     timerDisplay.style.display = 'none';
   }
 
   // Configuración de voz
   const savedRate = localStorage.getItem('test_scs_rate');
-  if(savedRate) {
-    rateSlider.value = savedRate;
-    rateValue.textContent = savedRate + 'x';
-  }
-  rateSlider.oninput = () => {
-    localStorage.setItem('test_scs_rate', rateSlider.value);
-    rateValue.textContent = rateSlider.value + 'x';
-  };
+  if(savedRate) { rateSlider.value = savedRate; rateValue.textContent = savedRate + 'x'; }
+  rateSlider.oninput = () => { localStorage.setItem('test_scs_rate', rateSlider.value); rateValue.textContent = rateSlider.value + 'x'; };
 
   function cargarVoces(){
     if(!synth)return;
     const voces = synth.getVoices();
     const selector = $('voiceSelect');
     selector.innerHTML = '';
-    
     const vocesEsp = voces.filter(v => v.lang.startsWith('es'));
-    if(vocesEsp.length === 0) {
-        voces.forEach(v => selector.add(new Option(v.name, v.name)));
-    } else {
-        vocesEsp.forEach(v => selector.add(new Option(v.name, v.name)));
-    }
+    if(vocesEsp.length === 0) { voces.forEach(v => selector.add(new Option(v.name, v.name))); } 
+    else { vocesEsp.forEach(v => selector.add(new Option(v.name, v.name))); }
 
     const guardada = localStorage.getItem('test_scs_voice');
     if(guardada) {
         for(let i=0; i<selector.options.length; i++){
-            if(selector.options[i].value === guardada) {
-                selector.selectedIndex = i;
-                break;
-            }
+            if(selector.options[i].value === guardada) { selector.selectedIndex = i; break; }
         }
     } else {
         const masculinas = ["pablo", "raul", "jorge", "diego", "enrique", "hombre", "male"];
         for(let i=0; i<selector.options.length; i++){
             const nombre = selector.options[i].value.toLowerCase();
-            if(masculinas.some(m => nombre.includes(m))){
-                selector.selectedIndex = i;
-                break;
-            }
+            if(masculinas.some(m => nombre.includes(m))){ selector.selectedIndex = i; break; }
         }
     }
     actualizarVozSeleccionada();
@@ -404,46 +518,28 @@ main{padding:15px;max-width:900px;margin:0 auto;display:flex;flex-direction:colu
     selectedVoice = voces.find(v => v.name === nombre);
     localStorage.setItem('test_scs_voice', nombre);
   }
-
   $('voiceSelect').onchange = actualizarVozSeleccionada;
 
   $('testVoice').onclick = () => {
     stopSpeak();
     const u = new SpeechSynthesisUtterance("Hola, esta es una prueba de voz.");
     if(selectedVoice) u.voice = selectedVoice;
-    u.lang = 'es-ES';
-    u.pitch = 0.8;
-    u.rate = parseFloat(rateSlider.value);
+    u.lang = 'es-ES'; u.pitch = 0.8; u.rate = parseFloat(rateSlider.value);
     synth.speak(u);
   };
 
   function speak(text, onEnd) {
     if(!audioOn || !synth) { if(onEnd) onEnd(); return; }
-    synth.cancel();
-    isSpeaking = true;
+    synth.cancel(); isSpeaking = true;
     const u=new SpeechSynthesisUtterance(text);
     if(selectedVoice) u.voice = selectedVoice;
-    u.lang='es-ES';
-    u.pitch=0.8;
-    u.rate=parseFloat(rateSlider.value);
-    
+    u.lang='es-ES'; u.pitch=0.8; u.rate=parseFloat(rateSlider.value);
     const timeoutId = setTimeout(() => { isSpeaking = false; }, text.length * 100 + 2000);
-
-    u.onend = () => {
-      clearTimeout(timeoutId);
-      isSpeaking = false;
-      if(onEnd) onEnd();
-    };
-    u.onerror = () => {
-      clearTimeout(timeoutId);
-      isSpeaking = false;
-      if(onEnd) onEnd();
-    };
+    u.onend = () => { clearTimeout(timeoutId); isSpeaking = false; if(onEnd) onEnd(); };
+    u.onerror = () => { clearTimeout(timeoutId); isSpeaking = false; if(onEnd) onEnd(); };
     synth.speak(u);
   }
-  function stopSpeak(){
-    if(synth){ synth.cancel(); isSpeaking = false; }
-  }
+  function stopSpeak(){ if(synth){ synth.cancel(); isSpeaking = false; } }
 
   function checkLoad(){
     if(typeof PREGUNTAS==='undefined' || !Array.isArray(PREGUNTAS) || PREGUNTAS.length===0){
@@ -461,40 +557,29 @@ main{padding:15px;max-width:900px;margin:0 auto;display:flex;flex-direction:colu
       questionCard.style.display = 'none';
       controlsArea.style.display = 'none';
       statusArea.style.display = 'none';
-      summaryScreen.style.display = 'block';
+      summaryScreen.style.display = 'flex';
       
       if(currentList.length === 0) {
-          $('summaryTitle').textContent = '🎉 ¡Todo limpio!';
-          $('summaryText').textContent = 'No tienes preguntas pendientes en este filtro. ¡Buen trabajo!';
-          $('btnRepeatRound').style.display = 'none'; 
-          $('btnNewExam').style.display = 'none';
+          $('summaryTitle').textContent = 'Todo limpio';
+          $('summaryText').textContent = 'No tienes preguntas pendientes en este filtro.';
+          $('btnRepeatRound').style.display = 'none'; $('btnNewExam').style.display = 'none';
       } else {
           if(currentFilter === 'exam') {
               stopTimer();
-              $('summaryTitle').textContent = '📝 Simulacro Finalizado';
-              
-              let examScore = 0;
-              currentList.forEach(p => {
-                  if (roundAnswers[p.n] === p.a) examScore++;
-              });
-              
-              const timeStr = timerToggle.checked ? ` en ${Math.floor(timeElapsed / 60)} min y ${timeElapsed % 60} seg` : '';
-              $('summaryText').textContent = `Has acertado ${examScore} de ${currentList.length} preguntas${timeStr}.`;
-              $('btnNewExam').style.display = 'block';
-              $('btnRepeatRound').style.display = 'none';
+              $('summaryTitle').textContent = 'Simulacro Finalizado';
+              $('summaryText').textContent = `Has acertado ${examScore} de ${currentList.length} preguntas${timerToggle.checked ? ` en ${Math.floor(timeElapsed / 60)} min y ${timeElapsed % 60} seg` : ''}.`;
+              $('btnNewExam').style.display = 'block'; $('btnRepeatRound').style.display = 'none';
           } else {
               stopTimer();
-              $('summaryTitle').textContent = '🎉 ¡Has completado esta ronda!';
-              $('summaryText').textContent = 'Has repasado esta lista. Si quieres seguir practicando las que fallaste o dudaste, pulsa el botón de abajo.';
-              $('btnRepeatRound').style.display = 'block';
-              $('btnNewExam').style.display = 'none';
+              $('summaryTitle').textContent = 'Ronda completada';
+              $('summaryText').textContent = 'Has repasado esta lista. Puedes seguir practicando.';
+              $('btnRepeatRound').style.display = 'block'; $('btnNewExam').style.display = 'none';
           }
       }
-      updateStats();
-      return;
+      updateStats(); return;
     }
     
-    questionCard.style.display = 'block';
+    questionCard.style.display = 'flex';
     controlsArea.style.display = 'flex';
     statusArea.style.display = 'flex';
     summaryScreen.style.display = 'none';
@@ -504,24 +589,18 @@ main{padding:15px;max-width:900px;margin:0 auto;display:flex;flex-direction:colu
     $('jumpInput').value = p.n;
     enEl.textContent=p.q;
     opcEl.innerHTML='';
-    
-    // Importante: leemos de roundAnswers, no de listState.answers
-    const prev = roundAnswers[p.n]; 
-    
+    const prev = roundAnswers[p.n];
     const letras=['1','2','3','4'];
     
     const isDoubt = listState.doubts[p.n] === true;
     doubtBtn.classList.toggle('active', isDoubt);
-    doubtBtn.innerHTML = isDoubt ? '⭐ Es dudosa' : '🤔 Marcar dudosa';
+    doubtBtn.textContent = isDoubt ? '⭐ Es dudosa' : '🤔 Marcar dudosa';
     questionCard.classList.toggle('is-doubt', isDoubt);
-    
-    // Mostrar u ocultar botón de reintentar
     resetBtn.style.display = (prev !== undefined) ? 'inline-block' : 'none';
 
     p.o.forEach((op,i)=>{
       const b=document.createElement('button');
-      b.className='opcion';
-      b.dataset.idx=i+1;
+      b.className='opcion'; b.dataset.idx=i+1;
       b.innerHTML='<span class="letra">'+letras[i]+'.</span><span>'+op+'</span>';
       if(prev !== undefined){
         b.disabled=true;
@@ -546,9 +625,7 @@ main{padding:15px;max-width:900px;margin:0 auto;display:flex;flex-direction:colu
       setTimeout(()=>{
         let t='Pregunta '+p.n+'. '+p.q+'. ';
         p.o.forEach((op,i)=>{t+=(i+1)+': '+op+'. ';}); 
-        speak(t, () => {
-          if(handsfree) setTimeout(() => startListening(), 2000);
-        });
+        speak(t, () => { if(handsfree) setTimeout(() => startListening(), 2000); });
       }, 250);
     }
   }
@@ -556,172 +633,95 @@ main{padding:15px;max-width:900px;margin:0 auto;display:flex;flex-direction:colu
   resetBtn.onclick = () => {
     if(currentList.length === 0 || currentIdx >= currentList.length) return;
     const p = currentList[currentIdx];
-    if(confirm('¿Quieres volver a contestar esta pregunta? Se borrará tu respuesta anterior.')){
-        delete roundAnswers[p.n];
-        delete listState.answers[p.n];
-        saveState();
-        stopSpeak();
-        stopListening();
-        render();
+    if(confirm('¿Quieres volver a contestar esta pregunta?')){
+        delete roundAnswers[p.n]; delete listState.answers[p.n];
+        saveState(); stopSpeak(); stopListening(); render();
     }
   };
 
   doubtBtn.onclick = () => {
     if(currentList.length === 0 || currentIdx >= currentList.length) return;
     const p = currentList[currentIdx];
-    
-    listState.doubts[p.n] = !listState.doubts[p.n];
-    saveState();
-    
+    listState.doubts[p.n] = !listState.doubts[p.n]; saveState();
     const isDoubt = listState.doubts[p.n] === true;
     doubtBtn.classList.toggle('active', isDoubt);
-    doubtBtn.innerHTML = isDoubt ? '⭐ Es dudosa' : '🤔 Marcar dudosa';
+    doubtBtn.textContent = isDoubt ? '⭐ Es dudosa' : '🤔 Marcar dudosa';
     questionCard.classList.toggle('is-doubt', isDoubt);
-    
     updateStats();
   };
 
   function answer(p,choose){
-    // Guardamos en la ronda y en el historial global
-    roundAnswers[p.n] = choose;
-    listState.answers[p.n]=choose;
-    saveState();
-    
+    roundAnswers[p.n] = choose; listState.answers[p.n]=choose; saveState();
     document.querySelectorAll('.opcion').forEach(b=>{
-      b.disabled=true;
-      const idx=parseInt(b.dataset.idx,10);
+      b.disabled=true; const idx=parseInt(b.dataset.idx,10);
       if(idx===p.a)b.classList.add('correct');
       if(idx===choose&&choose!==p.a)b.classList.add('wrong');
     });
     const resEl=$('resultado');
+    if(currentFilter === 'exam' && choose === p.a) { examScore++; }
     
     if(choose===p.a){
       resEl.textContent='✅ Correcto';resEl.className='resultado ok';
-      speak('Correcto.', () => {
-        if(handsfree) setTimeout(() => nextQuestion(), 1500);
-      });
+      speak('Correcto.', () => { if(handsfree) setTimeout(() => nextQuestion(), 1500); });
     }else{
-      resEl.textContent='❌ Incorrecto. La correcta es la opción '+p.a;
-      resEl.className='resultado ko';
-      const msg = 'Incorrecto. La respuesta correcta es la ' + p.a + ': ' + p.o[p.a-1];
-      speak(msg, () => {
-        if(handsfree) setTimeout(() => nextQuestion(), 1500);
-      });
+      resEl.textContent='❌ Incorrecto. La correcta es la opción '+p.a;resEl.className='resultado ko';
+      speak('Incorrecto. La respuesta correcta es la ' + p.a + ': ' + p.o[p.a-1], () => { if(handsfree) setTimeout(() => nextQuestion(), 1500); });
     }
-    
-    resetBtn.style.display = 'inline-block';
-    updateStats();
+    resetBtn.style.display = 'inline-block'; updateStats();
   }
 
   function updateStats(){
     let ok=0,ko=0, approved=0;
     for(const k in listState.answers){
-      const n=parseInt(k,10);
-      const p=PREGUNTAS.find(x=>x.n===n);
-      if(!p)continue;
-      if(listState.answers[k]===p.a){
-          ok++;
-          if(!listState.doubts[p.n]) {
-              approved++;
-          }
-      } else {
-          ko++;
-      }
+      const n=parseInt(k,10); const p=PREGUNTAS.find(x=>x.n===n); if(!p)continue;
+      if(listState.answers[k]===p.a){ ok++; if(!listState.doubts[p.n]) { approved++; } } else { ko++; }
     }
-    
-    $('okCount').textContent=ok;
-    $('koCount').textContent=ko;
-    $('approvedCount').textContent=approved;
+    $('okCount').textContent=ok; $('koCount').textContent=ko; $('approvedCount').textContent=approved;
     
     const unapprovedCount = 300 - approved;
     const examBtn = $('filterExam');
-    if (unapprovedCount === 0) {
-        examBtn.textContent = "🏆 Todo Aprobado";
-        examBtn.disabled = true;
-    } else if (unapprovedCount < 50) {
-        examBtn.textContent = `📝 Simulacro (${unapprovedCount})`;
-        examBtn.disabled = false;
-    } else {
-        examBtn.textContent = "📝 Simulacro (50)";
-        examBtn.disabled = false;
-    }
+    if (unapprovedCount === 0) { examBtn.textContent = "Todo Aprobado"; examBtn.disabled = true; }
+    else if (unapprovedCount < 50) { examBtn.textContent = `Simulacro (${unapprovedCount})`; examBtn.disabled = false; }
+    else { examBtn.textContent = "Simulacro (50)"; examBtn.disabled = false; }
     
-    if(currentList.length > 0 && currentIdx < currentList.length) {
-        $('prog').textContent=(currentIdx+1)+'/'+currentList.length;
-    } else if (currentList.length > 0) {
-        $('prog').textContent=currentList.length+'/'+currentList.length;
-    } else {
-        $('prog').textContent='0/0';
-    }
+    if(currentList.length > 0 && currentIdx < currentList.length) { $('prog').textContent=(currentIdx+1)+'/'+currentList.length; } 
+    else if (currentList.length > 0) { $('prog').textContent=currentList.length+'/'+currentList.length; } 
+    else { $('prog').textContent='0/0'; }
   }
 
   function initVoice(){
-    if(!SR){
-      micBtn.style.display='none';
-      $('micStatus').textContent = 'Navegador sin micrófono.';
-      return;
-    }
-    recognition=new SR();
-    recognition.lang='es-ES';
-    recognition.continuous=false;
-    recognition.interimResults=false;
-    recognition.maxAlternatives=3;
+    if(!SR){ micBtn.style.display='none'; $('micStatus').textContent = 'Navegador sin micrófono.'; return; }
+    recognition=new SR(); recognition.lang='es-ES'; recognition.continuous=false; recognition.interimResults=false; recognition.maxAlternatives=3;
     
     recognition.onresult=e=>{
       const text=(e.results[0][0].transcript||'').toLowerCase().trim();
       $('micStatus').textContent='Has dicho: "'+text+'"';
       handleVoiceCommand(text);
     };
-    
     recognition.onerror=e=>{
-      listening=false;
-      micBtn.classList.remove('escuchando');
-      $('micStatus').textContent = '';
-      
-      if(e.error==='not-allowed'){
-        $('micStatus').textContent='Permiso denegado. Revisa la configuración de Windows.';
-      }else if(e.error==='no-speech'){
-        if(handsfree) setTimeout(() => startListening(), 1500);
-        else $('micStatus').textContent='No te he oído. Pulsa 🎤 otra vez.';
-      }else if(e.error==='network'){
-        $('micStatus').textContent='Error de red. El micro usa los servidores de Google.';
-      }else{
-        $('micStatus').textContent='Error de micro: '+e.error + '. Reintentando...';
-        if(handsfree) setTimeout(() => startListening(), 1500);
-      }
+      listening=false; micBtn.classList.remove('escuchando'); $('micStatus').textContent = '';
+      if(e.error==='not-allowed'){ $('micStatus').textContent='Permiso denegado.'; }
+      else if(e.error==='no-speech'){ if(handsfree) setTimeout(() => startListening(), 1500); else $('micStatus').textContent='No te he oído.'; }
+      else { if(handsfree) setTimeout(() => startListening(), 1500); }
     };
-    
     recognition.onend=()=>{
-      listening=false;
-      micBtn.classList.remove('escuchando');
+      listening=false; micBtn.classList.remove('escuchando');
       if(handsfree && !isSpeaking && currentIdx < currentList.length) {
-          if(!roundAnswers[currentList[currentIdx].n]) {
-              setTimeout(() => startListening(), 1000);
-          }
-      } else if(!handsfree) {
-          $('micStatus').textContent='Pulsa el micro para hablar';
-      }
+          if(!roundAnswers[currentList[currentIdx].n]) { setTimeout(() => startListening(), 1000); }
+      } else if(!handsfree) { $('micStatus').textContent='Pulsa el micro para hablar'; }
     };
   }
 
   function startListening(){
     if(!recognition || listening) return;
-    try{
-      recognition.start();
-      listening=true;
-      micBtn.classList.add('escuchando');
-      $('micStatus').textContent='Escuchando… Di la opción (1 a 4)';
-    }catch(e){
-      listening=false;
-      if(handsfree) setTimeout(startListening, 1500);
-    }
+    try{ recognition.start(); listening=true; micBtn.classList.add('escuchando'); $('micStatus').textContent='Escuchando… Di la opción (1 a 4)'; }
+    catch(e){ listening=false; if(handsfree) setTimeout(startListening, 1500); }
   }
 
   function stopListening(){
     if(!recognition||!listening)return;
-    try{recognition.abort();}catch(e){}
-    listening=false;
-    micBtn.classList.remove('escuchando');
+    try{ recognition.abort(); }catch(e){}
+    listening=false; micBtn.classList.remove('escuchando');
     $('micStatus').textContent = handsfree ? 'Modo manos libres activo' : 'Pulsa el micro para hablar';
   }
 
@@ -731,15 +731,11 @@ main{padding:15px;max-width:900px;margin:0 auto;display:flex;flex-direction:colu
         if(/(repetir|ronda|examen|simulacro)/.test(text)){ startSimulacro(); }
         return;
     }
-    
-    const p=currentList[currentIdx];
-    const prev=roundAnswers[p.n];
-
+    const p=currentList[currentIdx]; const prev=roundAnswers[p.n];
     if(/(siguiente|avanzar|adelante)/.test(text)){nextQuestion();return;}
     if(/(atr[aá]s|anterior|volver)/.test(text)){if(currentIdx>0){currentIdx--;stopSpeak();stopListening();render();}return;}
     if(/(repetir|repite|otra vez|escuchar)/.test(text)){$('repeat').click();return;}
     if(/(silencio|para|calla)/.test(text)){stopSpeak();return;}
-
     if(prev !== undefined) return;
 
     let choice=null;
@@ -752,45 +748,27 @@ main{padding:15px;max-width:900px;margin:0 auto;display:flex;flex-direction:colu
       const btn=document.querySelector('.opcion[data-idx="'+choice+'"]');
       if(btn&&!btn.disabled)btn.click();
     }else{
-      if(handsfree) {
-        $('micStatus').textContent = 'No entendido. Escuchando otra vez...';
-        setTimeout(() => startListening(), 1000);
-      } else {
-        speak('No te he entendido. Di uno, dos, tres o cuatro.');
-      }
+      if(handsfree) { $('micStatus').textContent = 'No entendido. Escuchando otra vez...'; setTimeout(() => startListening(), 1000); } 
+      else { speak('No te he entendido. Di uno, dos, tres o cuatro.'); }
     }
   }
 
   function nextQuestion() {
     if(currentIdx < currentList.length - 1){
-      currentIdx++;
-      stopSpeak();
-      stopListening();
-      render();
+      currentIdx++; stopSpeak(); stopListening(); render();
     }else{
-      currentIdx++; 
-      stopSpeak();
-      stopListening();
-      render();
-      if(currentFilter === 'exam') speak('Simulacro terminado.');
-      else speak('Has terminado esta ronda.');
+      currentIdx++; stopSpeak(); stopListening(); render();
+      if(currentFilter === 'exam') speak('Simulacro terminado.'); else speak('Has terminado esta ronda.');
     }
   }
 
   function updateHandsfreeUI() {
-    if (handsfree) {
-      micBtn.classList.add('handfree');
-      $('micStatus').textContent = 'Modo manos libres activo';
-    } else {
-      micBtn.classList.remove('handfree');
-      $('micStatus').textContent = 'Pulsa el micro para hablar';
-      stopListening();
-    }
+    if (handsfree) { micBtn.classList.add('handfree'); $('micStatus').textContent = 'Modo manos libres activo'; } 
+    else { micBtn.classList.remove('handfree'); $('micStatus').textContent = 'Pulsa el micro para hablar'; stopListening(); }
   }
 
   handsfreeToggle.onchange = (e) => {
-    handsfree = e.target.checked;
-    updateHandsfreeUI();
+    handsfree = e.target.checked; updateHandsfreeUI();
     if (handsfree && currentIdx < currentList.length) {
       const p = currentList[currentIdx];
       if (p) {
@@ -799,64 +777,47 @@ main{padding:15px;max-width:900px;margin:0 auto;display:flex;flex-direction:colu
           let t = 'Pregunta ' + p.n + '. ' + p.q + '. ';
           p.o.forEach((op, i) => { t += (i + 1) + ': ' + op + '. '; });
           speak(t, () => setTimeout(() => startListening(), 2000));
-        } else {
-          nextQuestion();
-        }
+        } else { nextQuestion(); }
       }
     }
   };
 
   $('prev').onclick=()=>{if(currentIdx>0){currentIdx--;stopSpeak();stopListening();render();}};
   $('next').onclick=nextQuestion;
-  
   $('repeat').onclick=()=>{
-    stopSpeak();
-    if(currentIdx >= currentList.length) return;
+    stopSpeak(); if(currentIdx >= currentList.length) return;
     const p=currentList[currentIdx];
     let t='Pregunta '+p.n+'. '+p.q+'. ';
     p.o.forEach((op,i)=>{t+=(i+1)+': '+op+'. ';});
-    speak(t, () => {
-      if(handsfree) setTimeout(() => startListening(), 2000);
-    });
+    speak(t, () => { if(handsfree) setTimeout(() => startListening(), 2000); });
   };
   
   micBtn.onclick=()=>{
-    if(listening) {
-      stopListening();
-      handsfreeToggle.checked = false;
-      handsfree = false;
-      updateHandsfreeUI();
-    } else {
-      startListening();
-    }
+    if(listening) { stopListening(); handsfreeToggle.checked = false; handsfree = false; updateHandsfreeUI(); } 
+    else { startListening(); }
   };
 
   $('restart').onclick=()=>{
     if(confirm('¿Borrar todo el progreso, fallos y dudas marcadas?')){
-      listState.answers={};
-      listState.doubts={};
-      roundAnswers={};
-      saveState();
-      setFilter('all');
+      listState.answers={}; listState.doubts={}; roundAnswers={}; saveState(); setFilter('all');
     }
   };
   
   $('btnTheme').onclick=()=>{
     const html=document.documentElement;
-    const next=html.getAttribute('data-theme')==='dark'?'light':'dark';
-    html.setAttribute('data-theme',next);
-    localStorage.setItem('test_scs_theme',next);
+    const currentTheme = html.getAttribute('data-theme') || 'dark';
+    const next = currentTheme === 'dark' ? 'light' : 'dark';
+    html.setAttribute('data-theme',next); localStorage.setItem('test_scs_theme',next);
   };
   
   $('btnAudio').onclick=()=>{
     audioOn=!audioOn;
-    $('btnAudio').textContent=audioOn?'🔊':'🔇';
+    $('btnAudio').style.opacity = audioOn ? '1' : '0.5';
     if(!audioOn)stopSpeak();
   };
 
   document.addEventListener('keydown',e=>{
     if(e.target.tagName === 'INPUT') return; 
-    
     if(['1','2','3','4'].includes(e.key)){
       if(currentIdx >= currentList.length) return;
       const btn=document.querySelector('.opcion[data-idx="'+e.key+'"]');
@@ -866,22 +827,14 @@ main{padding:15px;max-width:900px;margin:0 auto;display:flex;flex-direction:colu
     if(e.key==='ArrowLeft')$('prev').click();
   });
 
+  // Tema guardado
   const savedTheme=localStorage.getItem('test_scs_theme');
-  if(savedTheme)document.documentElement.setAttribute('data-theme',savedTheme);
-  loadState();
+  if(savedTheme) document.documentElement.setAttribute('data-theme',savedTheme);
   
-  if(synth) {
-    synth.onvoiceschanged = cargarVoces;
-    cargarVoces();
-  }
-
-  if(checkLoad()){
-    initVoice();
-    setFilter('all'); 
-  }
-  if('serviceWorker' in navigator){
-    navigator.serviceWorker.register('service-worker.js').catch(()=>{});
-  }
+  loadState();
+  if(synth) { synth.onvoiceschanged = cargarVoces; cargarVoces(); }
+  if(checkLoad()){ initVoice(); setFilter('all'); }
+  if('serviceWorker' in navigator){ navigator.serviceWorker.register('service-worker.js').catch(()=>{}); }
 })();
 </script>
 </body>
