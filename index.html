@@ -73,6 +73,10 @@ main{padding:15px;max-width:900px;margin:0 auto;display:flex;flex-direction:colu
 .summary-screen{text-align:center;padding:30px;background:var(--card);border-radius:12px;display:none;}
 .summary-screen h2{font-size:1.5rem;color:var(--ok);margin-bottom:15px;}
 .summary-screen p{font-size:1.1rem;margin-bottom:20px;}
+.summary-actions{display:flex;flex-direction:column;gap:15px;align-items:center;}
+.summary-actions button{padding:15px 20px;font-size:1.1rem;border-radius:10px;border:none;cursor:pointer;font-weight:bold;width:100%;max-width:300px;}
+.btn-repasar{background:var(--btn);color:var(--btn-fg);}
+.btn-todas{background:var(--card);color:var(--fg);border:2px solid var(--border)!important;}
 
 @media (max-width:700px){
   .btn-mic { width: 100px; height: 100px; font-size: 4rem; }
@@ -122,9 +126,14 @@ main{padding:15px;max-width:900px;margin:0 auto;display:flex;flex-direction:colu
     <div class="resultado" id="resultado"></div>
   </div>
   
+  <!-- Pantalla de fin de ronda -->
   <div class="summary-screen" id="summaryScreen">
-    <h2>🎉 ¡Has completado esta lista!</h2>
-    <p>Puedes usar los filtros de arriba para repasar las preguntas que has fallado o las que has marcado como dudosas, o pulsar "Reiniciar" para empezar de cero.</p>
+    <h2 id="summaryTitle">🎉 ¡Has completado esta ronda!</h2>
+    <p id="summaryText">Puedes repasar las preguntas que has fallado o dudado tantas veces como quieras.</p>
+    <div class="summary-actions">
+      <button id="btnRepeatRound" class="btn-repasar">🔄 Repetir ronda de repaso</button>
+      <button id="btnGoAll" class="btn-todas">📚 Ir a todas las preguntas</button>
+    </div>
   </div>
   
   <div class="bottom-controls" id="controlsArea">
@@ -149,8 +158,12 @@ main{padding:15px;max-width:900px;margin:0 auto;display:flex;flex-direction:colu
   'use strict';
   const S_KEY='test_scs_v2';
   const listState={answers:{}, doubts:{}};
-  let currentIdx=0;
-  let currentFilter='all'; // 'all', 'failed', 'doubt'
+  
+  // Variables de sesión de estudio
+  let currentList = []; // La lista fija de preguntas de la ronda actual
+  let currentIdx = 0;
+  let currentFilter='all'; 
+  
   let audioOn=true, handsfree=false, listening=false, isSpeaking=false;
   
   const synth=window.speechSynthesis;
@@ -181,11 +194,12 @@ main{padding:15px;max-width:900px;margin:0 auto;display:flex;flex-direction:colu
   }
   function saveState(){localStorage.setItem(S_KEY,JSON.stringify(listState));}
   
-  function getList(){
+  // Obtener lista filtrada (en bruto)
+  function getFilteredQuestions() {
     if(currentFilter === 'failed') {
       return PREGUNTAS.filter(p => {
         const chosen = listState.answers[p.n];
-        return chosen !== undefined && chosen !== p.a;
+        return chosen !== undefined && chosen !== p.a; // Fallo si tiene respuesta incorrecta
       });
     } else if(currentFilter === 'doubt') {
       return PREGUNTAS.filter(p => listState.doubts[p.n] === true);
@@ -193,9 +207,15 @@ main{padding:15px;max-width:900px;margin:0 auto;display:flex;flex-direction:colu
     return PREGUNTAS;
   }
 
+  // Iniciar una nueva ronda (congela la lista para no saltarse preguntas)
+  function startNewRound() {
+    currentList = getFilteredQuestions();
+    currentIdx = 0;
+    render();
+  }
+
   function setFilter(filter) {
     currentFilter = filter;
-    currentIdx = 0;
     stopSpeak();
     stopListening();
     
@@ -203,13 +223,18 @@ main{padding:15px;max-width:900px;margin:0 auto;display:flex;flex-direction:colu
     $('filterFailed').classList.toggle('active', filter === 'failed');
     $('filterDoubt').classList.toggle('active', filter === 'doubt');
     
-    render();
+    startNewRound();
   }
 
   $('filterAll').onclick = () => setFilter('all');
   $('filterFailed').onclick = () => setFilter('failed');
   $('filterDoubt').onclick = () => setFilter('doubt');
+  $('btnGoAll').onclick = () => setFilter('all');
   
+  $('btnRepeatRound').onclick = () => {
+    startNewRound();
+  };
+
   $('jumpBtn').onclick = () => {
     const targetNum = parseInt($('jumpInput').value, 10);
     if(isNaN(targetNum) || targetNum < 1 || targetNum > 300) {
@@ -217,18 +242,22 @@ main{padding:15px;max-width:900px;margin:0 auto;display:flex;flex-direction:colu
         return;
     }
     
-    let list = getList();
-    let idx = list.findIndex(p => p.n === targetNum);
+    let idx = currentList.findIndex(p => p.n === targetNum);
     
     if(idx === -1) {
-        // No está en la lista actual (ej. buscar una que no has fallado estando en "falladas")
-        alert("Esa pregunta no está en el filtro actual. Cambiando a 'Todas'...");
+        // No está en la lista actual
+        if(currentFilter === 'all') {
+            // Si estamos en "todas" y no la encuentra, es un error
+            alert("Pregunta no encontrada.");
+            return;
+        }
+        alert("Esa pregunta no está en este filtro. Cambiando a 'Todas'...");
         currentFilter = 'all';
         $('filterAll').classList.add('active');
         $('filterFailed').classList.remove('active');
         $('filterDoubt').classList.remove('active');
-        list = PREGUNTAS;
-        idx = list.findIndex(p => p.n === targetNum);
+        currentList = PREGUNTAS;
+        idx = currentList.findIndex(p => p.n === targetNum);
     }
     
     if(idx !== -1) {
@@ -239,7 +268,7 @@ main{padding:15px;max-width:900px;margin:0 auto;display:flex;flex-direction:colu
     }
   };
 
-  // Configuración de velocidad y voz
+  // Configuración de voz
   const savedRate = localStorage.getItem('test_scs_rate');
   if(savedRate) {
     rateSlider.value = savedRate;
@@ -332,34 +361,35 @@ main{padding:15px;max-width:900px;margin:0 auto;display:flex;flex-direction:colu
   }
 
   function render(){
-    const list=getList();
     const numEl=$('num'), enEl=$('enunciado'), opcEl=$('opciones'), resEl=$('resultado');
     
-    // Si la lista está vacía o hemos terminado
-    if(list.length === 0 || currentIdx >= list.length){
+    // COMPROBAR FIN DE RONDA
+    if(currentList.length === 0 || currentIdx >= currentList.length){
       questionCard.style.display = 'none';
       controlsArea.style.display = 'none';
       statusArea.style.display = 'none';
       summaryScreen.style.display = 'block';
       
-      if(list.length === 0) {
-          summaryScreen.querySelector('h2').textContent = 'No hay preguntas en este filtro';
-          summaryScreen.querySelector('p').textContent = 'Prueba a cambiar de filtro en el menú superior.';
+      if(currentList.length === 0) {
+          $('summaryTitle').textContent = '🎉 ¡Todo limpio!';
+          $('summaryText').textContent = 'No tienes preguntas en este filtro (ni falladas ni dudosas). ¡Buen trabajo!';
+          $('btnRepeatRound').style.display = 'none'; // Ocultar si no hay nada
       } else {
-          summaryScreen.querySelector('h2').textContent = '🎉 ¡Has completado esta lista!';
-          summaryScreen.querySelector('p').textContent = 'Puedes usar los filtros de arriba para repasar las preguntas falladas o dudosas.';
+          $('summaryTitle').textContent = '🎉 ¡Has completado esta ronda!';
+          $('summaryText').textContent = 'Has repasado esta lista. Si quieres seguir practicando las que fallaste o dudaste, pulsa el botón de abajo.';
+          $('btnRepeatRound').style.display = 'block';
       }
       updateStats();
       return;
     }
     
-    // Si hay preguntas, mostrar la interfaz
+    // MOSTRAR PREGUNTA
     questionCard.style.display = 'block';
     controlsArea.style.display = 'flex';
     statusArea.style.display = 'flex';
     summaryScreen.style.display = 'none';
 
-    const p=list[currentIdx];
+    const p=currentList[currentIdx];
     numEl.textContent='Pregunta '+p.n;
     $('jumpInput').value = p.n;
     enEl.textContent=p.q;
@@ -367,7 +397,6 @@ main{padding:15px;max-width:900px;margin:0 auto;display:flex;flex-direction:colu
     const prev=listState.answers[p.n];
     const letras=['1','2','3','4'];
     
-    // Actualizar botón duda
     const isDoubt = listState.doubts[p.n] === true;
     doubtBtn.classList.toggle('active', isDoubt);
     doubtBtn.innerHTML = isDoubt ? '⭐ Es dudosa' : '🤔 Marcar dudosa';
@@ -409,9 +438,8 @@ main{padding:15px;max-width:900px;margin:0 auto;display:flex;flex-direction:colu
   }
 
   doubtBtn.onclick = () => {
-    const list = getList();
-    const p = list[currentIdx];
-    if(!p) return;
+    if(currentList.length === 0 || currentIdx >= currentList.length) return;
+    const p = currentList[currentIdx];
     
     listState.doubts[p.n] = !listState.doubts[p.n];
     saveState();
@@ -420,11 +448,6 @@ main{padding:15px;max-width:900px;margin:0 auto;display:flex;flex-direction:colu
     doubtBtn.classList.toggle('active', isDoubt);
     doubtBtn.innerHTML = isDoubt ? '⭐ Es dudosa' : '🤔 Marcar dudosa';
     questionCard.classList.toggle('is-doubt', isDoubt);
-    
-    if(currentFilter === 'doubt' && !isDoubt) {
-      // Si estamos en la lista de dudosas y la desmarcamos, pasamos a la siguiente
-      // No borramos la vista de inmediato para que el usuario vea que se ha desmarcado
-    }
   };
 
   function answer(p,choose){
@@ -464,11 +487,12 @@ main{padding:15px;max-width:900px;margin:0 auto;display:flex;flex-direction:colu
     }
     $('okCount').textContent=ok;$('koCount').textContent=ko;
     
-    const list=getList();
-    if(list.length > 0 && currentIdx < list.length) {
-        $('prog').textContent=(currentIdx+1)+'/'+list.length;
+    if(currentList.length > 0 && currentIdx < currentList.length) {
+        $('prog').textContent=(currentIdx+1)+'/'+currentList.length;
+    } else if (currentList.length > 0) {
+        $('prog').textContent=currentList.length+'/'+currentList.length;
     } else {
-        $('prog').textContent='0/'+list.length;
+        $('prog').textContent='0/0';
     }
   }
 
@@ -530,7 +554,13 @@ main{padding:15px;max-width:900px;margin:0 auto;display:flex;flex-direction:colu
   }
 
   function handleVoiceCommand(text){
-    const list=getList();const p=list[currentIdx];if(!p)return;
+    if(currentIdx >= currentList.length) {
+        if(/(todas|volver)/.test(text)){ setFilter('all'); }
+        if(/(repetir|ronda)/.test(text)){ startNewRound(); }
+        return;
+    }
+    
+    const p=currentList[currentIdx];
     const prev=listState.answers[p.n];
 
     if(/(siguiente|avanzar|adelante)/.test(text)){nextQuestion();return;}
@@ -560,8 +590,7 @@ main{padding:15px;max-width:900px;margin:0 auto;display:flex;flex-direction:colu
   }
 
   function nextQuestion() {
-    const list = getList();
-    if(currentIdx < list.length - 1){
+    if(currentIdx < currentList.length - 1){
       currentIdx++;
       stopSpeak();
       stopListening();
@@ -571,7 +600,7 @@ main{padding:15px;max-width:900px;margin:0 auto;display:flex;flex-direction:colu
       stopSpeak();
       stopListening();
       render();
-      speak('Has terminado esta lista.');
+      speak('Has terminado esta ronda.');
     }
   }
 
@@ -589,10 +618,8 @@ main{padding:15px;max-width:900px;margin:0 auto;display:flex;flex-direction:colu
   handsfreeToggle.onchange = (e) => {
     handsfree = e.target.checked;
     updateHandsfreeUI();
-    if (handsfree) {
-      const list = getList();
-      if(list.length === 0 || currentIdx >= list.length) return;
-      const p = list[currentIdx];
+    if (handsfree && currentIdx < currentList.length) {
+      const p = currentList[currentIdx];
       if (p) {
         const prev = listState.answers[p.n];
         if (prev === undefined) {
@@ -611,7 +638,8 @@ main{padding:15px;max-width:900px;margin:0 auto;display:flex;flex-direction:colu
   
   $('repeat').onclick=()=>{
     stopSpeak();
-    const list=getList();const p=list[currentIdx];if(!p)return;
+    if(currentIdx >= currentList.length) return;
+    const p=currentList[currentIdx];
     let t='Pregunta '+p.n+'. '+p.q+'. ';
     p.o.forEach((op,i)=>{t+=(i+1)+': '+op+'. ';});
     speak(t, () => {
@@ -635,7 +663,6 @@ main{padding:15px;max-width:900px;margin:0 auto;display:flex;flex-direction:colu
       listState.answers={};
       listState.doubts={};
       saveState();
-      currentIdx=0;
       setFilter('all');
     }
   };
@@ -654,10 +681,10 @@ main{padding:15px;max-width:900px;margin:0 auto;display:flex;flex-direction:colu
   };
 
   document.addEventListener('keydown',e=>{
-    if(e.target.tagName === 'INPUT') return; // Evitar que interfiera al escribir en el salto
+    if(e.target.tagName === 'INPUT') return; 
     
     if(['1','2','3','4'].includes(e.key)){
-      const list=getList();const p=list[currentIdx];if(!p)return;
+      if(currentIdx >= currentList.length) return;
       const btn=document.querySelector('.opcion[data-idx="'+e.key+'"]');
       if(btn&&!btn.disabled)btn.click();
     }
@@ -676,7 +703,7 @@ main{padding:15px;max-width:900px;margin:0 auto;display:flex;flex-direction:colu
 
   if(checkLoad()){
     initVoice();
-    render();
+    setFilter('all'); // Inicia mostrando todas
   }
   if('serviceWorker' in navigator){
     navigator.serviceWorker.register('service-worker.js').catch(()=>{});
