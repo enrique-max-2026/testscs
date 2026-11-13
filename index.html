@@ -12,18 +12,19 @@
 :root{--bg:#fff;--fg:#111;--card:#f4f4f4;--btn:#0055aa;--btn-fg:#fff;--ok:#1b7a1b;--ko:#b00020;--border:#ccc;--mic:#c62828}
 [data-theme="dark"]{--bg:#111;--fg:#f0f0f0;--card:#1e1e1e;--btn:#3399ff;--btn-fg:#000;--ok:#4caf50;--ko:#ff5252;--border:#444;--mic:#ff5252}
 *{box-sizing:border-box}
-body{margin:0;background:var(--bg);color:var(--fg);font-family:system-ui,-apple-system,"Segoe UI",Arial,sans-serif;font-size:20px;line-height:1.5}
-header{position:sticky;top:0;background:var(--bg);border-bottom:2px solid var(--border);padding:10px;display:flex;flex-direction:column;gap:10px;z-index:10}
+body{margin:0;background:var(--bg);color:var(--fg);font-family:system-ui,-apple-system,"Segoe UI",Arial,sans-serif;font-size:20px;line-height:1.5;display:flex;flex-direction:column;min-height:100vh;}
+header{background:var(--bg);border-bottom:2px solid var(--border);padding:10px;display:flex;flex-direction:column;gap:8px;z-index:10}
 .header-top{display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:space-between}
-.header-top h1{font-size:1.2rem;margin:0;}
-.header-top .stats{font-size:0.95rem;font-weight:bold;margin-right:auto;padding-left:10px;}
-.header-top button{font-size:1rem;padding:8px 12px;cursor:pointer;border-radius:8px;border:2px solid var(--border);background:var(--card);color:var(--fg)}
-.header-config{display:flex;flex-wrap:wrap;gap:15px;align-items:center;justify-content:center;font-size:0.95rem;background:var(--card);padding:10px;border-radius:10px;border:1px solid var(--border)}
-.header-config select{padding:8px;border-radius:8px;font-size:1rem;border:1px solid var(--border);background:var(--bg);color:var(--fg);max-width:200px;}
-.header-config input[type="range"]{width:120px;cursor:pointer;}
-.header-config button{padding:8px 12px;border-radius:8px;background:var(--btn);color:var(--btn-fg);border:none;cursor:pointer;font-size:0.9rem}
+.header-top h1{font-size:1.1rem;margin:0;}
+.header-top .stats{font-size:0.9rem;font-weight:bold;margin-right:auto;padding-left:10px;}
+.header-top button{font-size:0.9rem;padding:6px 10px;cursor:pointer;border-radius:8px;border:2px solid var(--border);background:var(--card);color:var(--fg);font-weight:bold;}
+.header-top button.active{background:var(--btn);color:var(--btn-fg);border-color:var(--btn);}
+.header-config{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:center;font-size:0.9rem;background:var(--card);padding:8px;border-radius:10px;border:1px solid var(--border)}
+.header-config select{padding:6px;border-radius:6px;font-size:0.9rem;border:1px solid var(--border);background:var(--bg);color:var(--fg);max-width:180px;}
+.header-config input[type="range"]{width:100px;cursor:pointer;}
+.header-config button{padding:6px 10px;border-radius:6px;background:var(--btn);color:var(--btn-fg);border:none;cursor:pointer;font-size:0.85rem;font-weight:bold;}
 
-main{padding:15px;max-width:900px;margin:0 auto;display:flex;flex-direction:column;gap:15px;}
+main{padding:15px;max-width:900px;margin:0 auto;display:flex;flex-direction:column;gap:15px;flex:1;width:100%;}
 .pregunta{background:var(--card);border-radius:12px;padding:15px}
 .num{font-weight:bold;font-size:1.1rem;margin-bottom:10px}
 .enunciado{font-size:1.15rem;margin-bottom:15px}
@@ -37,23 +38,26 @@ main{padding:15px;max-width:900px;margin:0 auto;display:flex;flex-direction:colu
 .resultado.ok{background:rgba(76,175,80,.25);color:var(--ok);display:block}
 .resultado.ko{background:rgba(255,82,82,.25);color:var(--ko);display:block}
 
-.mic-section{display:flex;flex-direction:column;align-items:center;gap:10px;margin:10px 0}
-.btn-mic-huge{width:120px;height:120px;border-radius:50%;font-size:4.5rem;background:var(--mic);color:#fff;border:none;box-shadow:0 6px 12px rgba(0,0,0,0.2);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:transform 0.1s, background 0.3s}
-.btn-mic-huge:active{transform:scale(0.95)}
-.btn-mic-huge.escuchando{animation:pulse-huge 1.5s infinite}
-.btn-mic-huge.handsfree{background:var(--ok)}
-@keyframes pulse-huge{0%{box-shadow:0 0 0 0 rgba(198,40,40,0.7)}70%{box-shadow:0 0 0 30px rgba(198,40,40,0)}100%{box-shadow:0 0 0 0 rgba(198,40,40,0)}}
-.mic-status{font-size:1rem;font-weight:bold;color:var(--btn);text-align:center;min-height:1.5em}
+/* Controles inferiores en una sola fila */
+.bottom-controls{display:flex;flex-wrap:nowrap;gap:10px;justify-content:center;align-items:center;margin-top:10px;padding-bottom:20px;overflow-x:auto;}
+.bottom-controls button:not(.btn-mic){height:65px;padding:0 15px;border-radius:12px;font-size:1.1rem;background:var(--card);color:var(--fg);border:2px solid var(--border);font-weight:bold;cursor:pointer;flex-shrink:0;}
+.bottom-controls button.primary{background:var(--btn);color:var(--btn-fg);border:none;}
+.btn-mic{width:100px;height:100px;border-radius:50%;font-size:3.5rem;background:var(--mic);color:white;border:none;box-shadow:0 6px 12px rgba(0,0,0,0.3);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:transform 0.1s;flex-shrink:0;}
+.btn-mic:active{transform:scale(0.95)}
+.btn-mic.escuchando{animation:pulse 1.5s infinite}
+.btn-mic.handfree{background:var(--ok)}
+@keyframes pulse{0%{box-shadow:0 0 0 0 rgba(198,40,40,0.7)}70%{box-shadow:0 0 0 25px rgba(198,40,40,0)}100%{box-shadow:0 0 0 0 rgba(198,40,40,0)}}
+
+.status-area{text-align:center;display:flex;flex-direction:column;align-items:center;gap:10px;margin-bottom:30px;}
+#micStatus{font-size:1rem;font-weight:bold;color:var(--btn);min-height:1.5em;}
 .switch-label{display:flex;align-items:center;gap:8px;font-size:1rem;font-weight:bold;cursor:pointer;background:var(--card);padding:8px 15px;border-radius:20px;border:1px solid var(--border)}
 .switch-label input{width:20px;height:20px;cursor:pointer}
 
-.controls-row-3{display:flex;flex-wrap:wrap;gap:10px;justify-content:center}
-.controls-row-3 button{flex:1;min-width:100px;padding:15px;font-size:1.1rem;border-radius:10px;background:var(--card);color:var(--fg);border:2px solid var(--border);font-weight:bold;cursor:pointer}
-.controls-row-3 button.primary{background:var(--btn);color:var(--btn-fg);border:none}
-.controls-row-2{display:flex;flex-wrap:wrap;gap:10px;justify-content:center}
-.controls-row-2 button{flex:1;max-width:250px;padding:12px;font-size:1rem;border-radius:10px;background:var(--card);color:var(--fg);border:2px solid var(--border);font-weight:bold;cursor:pointer}
-
-@media (max-width:600px){body{font-size:18px}.opcion{font-size:1rem}.enunciado{font-size:1.05rem}.btn-mic-huge{width:100px;height:100px;font-size:3.5rem}}
+@media (max-width:700px){
+  .bottom-controls{flex-wrap:wrap;}
+  .btn-mic{width:90px;height:90px;font-size:3rem;}
+  .bottom-controls button:not(.btn-mic){height:55px;font-size:1rem;}
+}
 </style>
 </head>
 <body>
@@ -61,8 +65,10 @@ main{padding:15px;max-width:900px;margin:0 auto;display:flex;flex-direction:colu
   <div class="header-top">
     <h1>Test SCS · <span id="prog">0/300</span></h1>
     <div class="stats">✅ <span id="okCount">0</span> · ❌ <span id="koCount">0</span></div>
-    <button id="btnTheme" title="Claro/oscuro">🌓</button>
-    <button id="btnAudio" title="Voz alta activada">🔊</button>
+    <button id="failedMode">📋 Solo falladas</button>
+    <button id="restart">🔄 Reiniciar</button>
+    <button id="btnTheme" title="Tema">🌓</button>
+    <button id="btnAudio" title="Voz">🔊</button>
   </div>
   <div class="header-config">
     <label>Voz: <select id="voiceSelect"></select></label>
@@ -70,6 +76,7 @@ main{padding:15px;max-width:900px;margin:0 auto;display:flex;flex-direction:colu
     <button id="testVoice">▶ Probar</button>
   </div>
 </header>
+
 <main>
   <div class="pregunta">
     <div class="num" id="num">Cargando…</div>
@@ -78,33 +85,29 @@ main{padding:15px;max-width:900px;margin:0 auto;display:flex;flex-direction:colu
     <div class="resultado" id="resultado"></div>
   </div>
   
-  <div class="mic-section">
-    <button id="micBtn" class="btn-mic-huge" title="Hablar">🎤</button>
-    <div class="mic-status" id="micStatus">Pulsa el micro para hablar</div>
-    <label class="switch-label">
-      <input type="checkbox" id="handsfreeToggle">
-      Modo manos libres (escucha automática)
-    </label>
-  </div>
-
-  <div class="controls-row-3">
+  <div class="bottom-controls">
+    <button id="micBtn" class="btn-mic" title="Hablar">🎤</button>
     <button id="repeat">🔁 Repetir</button>
     <button id="prev">◀ Anterior</button>
     <button id="next" class="primary">Siguiente ▶</button>
   </div>
 
-  <div class="controls-row-2">
-    <button id="failedMode">📋 Solo falladas</button>
-    <button id="restart">🔄 Reiniciar</button>
+  <div class="status-area">
+    <div id="micStatus">Pulsa el micro para hablar</div>
+    <label class="switch-label">
+      <input type="checkbox" id="handsfreeToggle">
+      Modo manos libres
+    </label>
   </div>
 </main>
+
 <script src="preguntas.js"></script>
 <script>
 (function(){
   'use strict';
   const S_KEY='test_scs_v2';
   const listState={answers:{}};
-  let currentIdx=0, failedOnly=false, audioOn=true, handsfree=false, listening=false;
+  let currentIdx=0, failedOnly=false, audioOn=true, handsfree=false, listening=false, isSpeaking=false;
   const synth=window.speechSynthesis;
   const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
   let recognition=null;
@@ -115,20 +118,19 @@ main{padding:15px;max-width:900px;margin:0 auto;display:flex;flex-direction:colu
   const rateValue = $('rateValue');
   const handsfreeToggle = $('handsfreeToggle');
   const micBtn = $('micBtn');
+  const failedBtn = $('failedMode');
 
   function loadState(){
     try{const s=JSON.parse(localStorage.getItem(S_KEY));if(s&&s.answers)Object.assign(listState,s);}catch(e){}
   }
   function saveState(){localStorage.setItem(S_KEY,JSON.stringify(listState));}
   
-  function isFailed(p) {
-    const chosen = listState.answers[p.n];
-    return chosen !== undefined && chosen !== p.a;
-  }
-
   function getList(){
     if(!failedOnly) return PREGUNTAS;
-    return PREGUNTAS.filter(p => isFailed(p));
+    return PREGUNTAS.filter(p => {
+      const chosen = listState.answers[p.n];
+      return chosen !== undefined && chosen !== p.a; // Es fallo si tiene respuesta y no es la correcta
+    });
   }
 
   const savedRate = localStorage.getItem('test_scs_rate');
@@ -186,7 +188,7 @@ main{padding:15px;max-width:900px;margin:0 auto;display:flex;flex-direction:colu
 
   $('testVoice').onclick = () => {
     stopSpeak();
-    const u = new SpeechSynthesisUtterance("Hola, esta es una prueba de voz. Pregunta número uno. Opción dos.");
+    const u = new SpeechSynthesisUtterance("Hola, esta es una prueba de voz.");
     if(selectedVoice) u.voice = selectedVoice;
     u.lang = 'es-ES';
     u.pitch = 0.8;
@@ -197,26 +199,26 @@ main{padding:15px;max-width:900px;margin:0 auto;display:flex;flex-direction:colu
   function speak(text, onEnd) {
     if(!audioOn || !synth) { if(onEnd) onEnd(); return; }
     synth.cancel();
+    isSpeaking = true;
     const u=new SpeechSynthesisUtterance(text);
     if(selectedVoice) u.voice = selectedVoice;
     u.lang='es-ES';
     u.pitch=0.8;
     u.rate=parseFloat(rateSlider.value);
     u.onend = () => {
+      isSpeaking = false;
       if(onEnd) onEnd();
     };
     synth.speak(u);
   }
-  function stopSpeak(){if(synth)synth.cancel();}
+  function stopSpeak(){
+    if(synth){ synth.cancel(); isSpeaking = false; }
+  }
 
   function checkLoad(){
-    if(typeof PREGUNTAS==='undefined'){
-      $('num').textContent='ERROR: no se ha cargado preguntas.js';
-      $('enunciado').textContent='Asegúrate de que el archivo preguntas.js está en la MISMA carpeta que index.html y termina con "];".';
-      return false;
-    }
-    if(!Array.isArray(PREGUNTAS)||PREGUNTAS.length===0){
-      $('num').textContent='ERROR: preguntas.js está vacío o mal formado.';
+    if(typeof PREGUNTAS==='undefined' || !Array.isArray(PREGUNTAS) || PREGUNTAS.length===0){
+      $('num').textContent='ERROR: no se ha cargado preguntas.js correctamente.';
+      $('enunciado').textContent='Asegúrate de que el archivo existe y no tiene errores de sintaxis.';
       return false;
     }
     return true;
@@ -225,19 +227,22 @@ main{padding:15px;max-width:900px;margin:0 auto;display:flex;flex-direction:colu
   function render(){
     const list=getList();
     const numEl=$('num'), enEl=$('enunciado'), opcEl=$('opciones'), resEl=$('resultado');
+    
     if(list.length===0){
-      numEl.textContent='No hay preguntas para mostrar.';
+      numEl.textContent=failedOnly ? '🎉 ¡No tienes preguntas falladas!' : 'No hay preguntas para mostrar.';
       enEl.textContent='';opcEl.innerHTML='';resEl.style.display='none';
       updateStats();return;
     }
     if(currentIdx>=list.length)currentIdx=list.length-1;
     if(currentIdx<0)currentIdx=0;
+    
     const p=list[currentIdx];
-    numEl.textContent='Pregunta '+p.n;
+    numEl.textContent='Pregunta '+p.n + (failedOnly ? ' (Fallo)' : '');
     enEl.textContent=p.q;
     opcEl.innerHTML='';
     const prev=listState.answers[p.n];
     const letras=['1','2','3','4'];
+    
     p.o.forEach((op,i)=>{
       const b=document.createElement('button');
       b.className='opcion';
@@ -252,6 +257,7 @@ main{padding:15px;max-width:900px;margin:0 auto;display:flex;flex-direction:colu
       }
       opcEl.appendChild(b);
     });
+    
     if(prev !== undefined){
       resEl.style.display='block';
       if(prev===p.a){resEl.textContent='✅ Correcto';resEl.className='resultado ok';}
@@ -264,11 +270,9 @@ main{padding:15px;max-width:900px;margin:0 auto;display:flex;flex-direction:colu
     if(prev === undefined){
       setTimeout(()=>{
         let t='Pregunta '+p.n+'. '+p.q+'. ';
-        p.o.forEach((op,i)=>{t+='Opción '+(i+1)+': '+op+'. ';});
+        p.o.forEach((op,i)=>{t+=(i+1)+': '+op+'. ';}); // Decimos "Uno: texto" para evitar que el micro capte la palabra "opción"
         speak(t, () => {
-          if(handsfree) {
-            setTimeout(() => startListening(), 300);
-          }
+          if(handsfree) setTimeout(() => startListening(), 2000); // 2 segundos de espera para no oírse a sí mismo
         });
       }, 250);
     }
@@ -288,14 +292,14 @@ main{padding:15px;max-width:900px;margin:0 auto;display:flex;flex-direction:colu
     if(choose===p.a){
       resEl.textContent='✅ Correcto';resEl.className='resultado ok';
       speak('Correcto.', () => {
-        if(handsfree) setTimeout(() => nextQuestion(), 500);
+        if(handsfree) setTimeout(() => nextQuestion(), 1000);
       });
     }else{
       resEl.textContent='❌ Incorrecto. La correcta es la opción '+p.a;
       resEl.className='resultado ko';
-      const msg = 'Incorrecto. La respuesta correcta es la opción ' + p.a + ': ' + p.o[p.a-1];
+      const msg = 'Incorrecto. La respuesta correcta es la ' + p.a + ': ' + p.o[p.a-1];
       speak(msg, () => {
-        if(handsfree) setTimeout(() => nextQuestion(), 500);
+        if(handsfree) setTimeout(() => nextQuestion(), 1000);
       });
     }
     updateStats();
@@ -317,7 +321,7 @@ main{padding:15px;max-width:900px;margin:0 auto;display:flex;flex-direction:colu
   function initVoice(){
     if(!SR){
       micBtn.style.display='none';
-      $('micStatus').textContent = 'Tu navegador no soporta micrófono.';
+      $('micStatus').textContent = 'Navegador sin micrófono.';
       return;
     }
     recognition=new SR();
@@ -337,7 +341,7 @@ main{padding:15px;max-width:900px;margin:0 auto;display:flex;flex-direction:colu
       micBtn.classList.remove('escuchando');
       $('micStatus').textContent = '';
       if(e.error==='not-allowed'){
-        $('micStatus').textContent='Permiso denegado. El micrófono necesita conexión segura (HTTPS).';
+        $('micStatus').textContent='Permiso denegado. Necesitas HTTPS.';
       }else if(e.error==='no-speech'){
         if(handsfree) setTimeout(() => startListening(), 1000);
         else $('micStatus').textContent='No te he oído. Pulsa 🎤 otra vez.';
@@ -354,13 +358,12 @@ main{padding:15px;max-width:900px;margin:0 auto;display:flex;flex-direction:colu
   }
 
   function startListening(){
-    if(!recognition)return;
-    if(listening)return;
+    if(!recognition || listening || isSpeaking) return; // No escuchar si está hablando
     try{
       recognition.start();
       listening=true;
       micBtn.classList.add('escuchando');
-      $('micStatus').textContent='Escuchando… Di la opción (1, 2, 3 o 4)';
+      $('micStatus').textContent='Escuchando… Di la opción (1 a 4)';
     }catch(e){listening=false;}
   }
 
@@ -381,26 +384,20 @@ main{padding:15px;max-width:900px;margin:0 auto;display:flex;flex-direction:colu
     if(/(repetir|repite|otra vez|escuchar)/.test(text)){$('repeat').click();return;}
     if(/(silencio|para|calla)/.test(text)){stopSpeak();return;}
 
-    if(prev !== undefined){
-      return;
-    }
+    if(prev !== undefined) return; // Ya respondida
 
     let choice=null;
     if(/(^|\s)(1|uno|primera?)(\s|$)/.test(text))choice=1;
     else if(/(^|\s)(2|dos|segunda?)(\s|$)/.test(text))choice=2;
     else if(/(^|\s)(3|tres|tercera?)(\s|$)/.test(text))choice=3;
     else if(/(^|\s)(4|cuatro|cuarta?)(\s|$)/.test(text))choice=4;
-    else if(/opci[oó]n\s*(1|uno)/.test(text))choice=1;
-    else if(/opci[oó]n\s*(2|dos)/.test(text))choice=2;
-    else if(/opci[oó]n\s*(3|tres)/.test(text))choice=3;
-    else if(/opci[oó]n\s*(4|cuatro)/.test(text))choice=4;
-
+    
     if(choice){
       const btn=document.querySelector('.opcion[data-idx="'+choice+'"]');
       if(btn&&!btn.disabled)btn.click();
     }else{
       if(handsfree) {
-        $('micStatus').textContent = 'No te he entendido. Vuelve a decir la opción.';
+        $('micStatus').textContent = 'No entendido. Vuelve a decir la opción.';
         setTimeout(() => startListening(), 1000);
       } else {
         speak('No te he entendido. Di uno, dos, tres o cuatro.');
@@ -425,10 +422,10 @@ main{padding:15px;max-width:900px;margin:0 auto;display:flex;flex-direction:colu
 
   function updateHandsfreeUI() {
     if (handsfree) {
-      micBtn.classList.add('handsfree');
+      micBtn.classList.add('handfree');
       $('micStatus').textContent = 'Modo manos libres activo';
     } else {
-      micBtn.classList.remove('handsfree');
+      micBtn.classList.remove('handfree');
       $('micStatus').textContent = 'Pulsa el micro para hablar';
       stopListening();
     }
@@ -444,8 +441,8 @@ main{padding:15px;max-width:900px;margin:0 auto;display:flex;flex-direction:colu
         const prev = listState.answers[p.n];
         if (prev === undefined) {
           let t = 'Pregunta ' + p.n + '. ' + p.q + '. ';
-          p.o.forEach((op, i) => { t += 'Opción ' + (i + 1) + ': ' + op + '. '; });
-          speak(t, () => setTimeout(() => startListening(), 300));
+          p.o.forEach((op, i) => { t += (i + 1) + ': ' + op + '. '; });
+          speak(t, () => setTimeout(() => startListening(), 2000));
         } else {
           nextQuestion();
         }
@@ -460,9 +457,9 @@ main{padding:15px;max-width:900px;margin:0 auto;display:flex;flex-direction:colu
     stopSpeak();
     const list=getList();const p=list[currentIdx];if(!p)return;
     let t='Pregunta '+p.n+'. '+p.q+'. ';
-    p.o.forEach((op,i)=>{t+='Opción '+(i+1)+': '+op+'. ';});
+    p.o.forEach((op,i)=>{t+=(i+1)+': '+op+'. ';});
     speak(t, () => {
-      if(handsfree) setTimeout(() => startListening(), 300);
+      if(handsfree) setTimeout(() => startListening(), 2000);
     });
   };
   
@@ -477,9 +474,13 @@ main{padding:15px;max-width:900px;margin:0 auto;display:flex;flex-direction:colu
     }
   };
 
-  $('failedMode').onclick=()=>{
-    failedOnly=!failedOnly;currentIdx=0;stopSpeak();stopListening();
-    $('failedMode').textContent=failedOnly?'📚 Ver todas':'📋 Solo falladas';
+  failedBtn.onclick=()=>{
+    failedOnly=!failedOnly;
+    currentIdx=0;
+    stopSpeak();
+    stopListening();
+    failedBtn.textContent=failedOnly?'📚 Ver todas':'📋 Solo falladas';
+    failedBtn.classList.toggle('active', failedOnly);
     render();
   };
   
