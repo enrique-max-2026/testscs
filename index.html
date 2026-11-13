@@ -9,8 +9,8 @@
 <link rel="icon" href="icon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="icon.svg">
 <style>
-:root{--bg:#fff;--fg:#111;--card:#f4f4f4;--btn:#0055aa;--btn-fg:#fff;--ok:#1b7a1b;--ko:#b00020;--border:#ccc;--mic:#c62828;--doubt:#d97706;}
-[data-theme="dark"]{--bg:#111;--fg:#f0f0f0;--card:#1e1e1e;--btn:#3399ff;--btn-fg:#000;--ok:#4caf50;--ko:#ff5252;--border:#444;--mic:#ff5252;--doubt:#f59e0b;}
+:root{--bg:#fff;--fg:#111;--card:#f4f4f4;--btn:#0055aa;--btn-fg:#fff;--ok:#1b7a1b;--ko:#b00020;--border:#ccc;--mic:#c62828;--doubt:#d97706;--exam:#7c3aed;}
+[data-theme="dark"]{--bg:#111;--fg:#f0f0f0;--card:#1e1e1e;--btn:#3399ff;--btn-fg:#000;--ok:#4caf50;--ko:#ff5252;--border:#444;--mic:#ff5252;--doubt:#f59e0b;--exam:#a78bfa;}
 *{box-sizing:border-box}
 body{margin:0;background:var(--bg);color:var(--fg);font-family:system-ui,-apple-system,"Segoe UI",Arial,sans-serif;font-size:20px;line-height:1.5;display:flex;flex-direction:column;min-height:100vh;}
 
@@ -29,6 +29,7 @@ header{background:var(--bg);border-bottom:2px solid var(--border);padding:10px;d
 .filter-btn.active{background:var(--btn);color:var(--btn-fg);border-color:var(--btn);}
 .filter-btn.doubt.active{background:var(--doubt);border-color:var(--doubt);color:#fff;}
 .filter-btn.failed.active{background:var(--ko);border-color:var(--ko);color:#fff;}
+.filter-btn.exam.active{background:var(--exam);border-color:var(--exam);color:#fff;}
 
 .header-config{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:center;font-size:0.9rem;background:var(--card);padding:8px;border-radius:10px;border:1px solid var(--border)}
 .header-config select{padding:6px;border-radius:6px;font-size:0.9rem;border:1px solid var(--border);background:var(--bg);color:var(--fg);max-width:150px;}
@@ -77,6 +78,7 @@ main{padding:15px;max-width:900px;margin:0 auto;display:flex;flex-direction:colu
 .summary-actions button{padding:15px 20px;font-size:1.1rem;border-radius:10px;border:none;cursor:pointer;font-weight:bold;width:100%;max-width:300px;}
 .btn-repasar{background:var(--btn);color:var(--btn-fg);}
 .btn-todas{background:var(--card);color:var(--fg);border:2px solid var(--border)!important;}
+.btn-exam{background:var(--exam);color:#fff;}
 
 @media (max-width:700px){
   .btn-mic { width: 100px; height: 100px; font-size: 4rem; }
@@ -91,7 +93,7 @@ main{padding:15px;max-width:900px;margin:0 auto;display:flex;flex-direction:colu
 <header>
   <div class="header-row">
     <h1>Test SCS · <span id="prog">0/300</span></h1>
-    <div class="stats">✅ <span id="okCount">0</span> · ❌ <span id="koCount">0</span></div>
+    <div class="stats">✅ <span id="okCount">0</span> · ❌ <span id="koCount">0</span> · 🏆 <span id="approvedCount">0</span>/300</div>
     <div class="jump-box">
       <label>Ir a:</label>
       <input type="number" id="jumpInput" min="1" max="300" value="1">
@@ -105,7 +107,10 @@ main{padding:15px;max-width:900px;margin:0 auto;display:flex;flex-direction:colu
     <button id="filterAll" class="filter-btn active">📚 Todas</button>
     <button id="filterFailed" class="filter-btn failed">📋 Falladas</button>
     <button id="filterDoubt" class="filter-btn doubt">🤔 Dudosas</button>
-    <button id="restart" class="filter-btn">🔄 Reiniciar</button>
+    <button id="filterExam" class="filter-btn exam">📝 Simulacro (50)</button>
+  </div>
+  <div class="header-filters">
+    <button id="restart" class="filter-btn" style="max-width:100%;">🔄 Reiniciar todo el progreso</button>
   </div>
 
   <div class="header-config">
@@ -126,12 +131,13 @@ main{padding:15px;max-width:900px;margin:0 auto;display:flex;flex-direction:colu
     <div class="resultado" id="resultado"></div>
   </div>
   
-  <!-- Pantalla de fin de ronda -->
+  <!-- Pantalla de fin de ronda / examen -->
   <div class="summary-screen" id="summaryScreen">
     <h2 id="summaryTitle">🎉 ¡Has completado esta ronda!</h2>
     <p id="summaryText">Puedes repasar las preguntas que has fallado o dudado tantas veces como quieras.</p>
     <div class="summary-actions">
       <button id="btnRepeatRound" class="btn-repasar">🔄 Repetir ronda de repaso</button>
+      <button id="btnNewExam" class="btn-exam">📝 Hacer otro Simulacro</button>
       <button id="btnGoAll" class="btn-todas">📚 Ir a todas las preguntas</button>
     </div>
   </div>
@@ -159,10 +165,10 @@ main{padding:15px;max-width:900px;margin:0 auto;display:flex;flex-direction:colu
   const S_KEY='test_scs_v2';
   const listState={answers:{}, doubts:{}};
   
-  // Variables de sesión de estudio
-  let currentList = []; // La lista fija de preguntas de la ronda actual
+  let currentList = []; 
   let currentIdx = 0;
   let currentFilter='all'; 
+  let examScore = 0;
   
   let audioOn=true, handsfree=false, listening=false, isSpeaking=false;
   
@@ -194,12 +200,11 @@ main{padding:15px;max-width:900px;margin:0 auto;display:flex;flex-direction:colu
   }
   function saveState(){localStorage.setItem(S_KEY,JSON.stringify(listState));}
   
-  // Obtener lista filtrada (en bruto)
   function getFilteredQuestions() {
     if(currentFilter === 'failed') {
       return PREGUNTAS.filter(p => {
         const chosen = listState.answers[p.n];
-        return chosen !== undefined && chosen !== p.a; // Fallo si tiene respuesta incorrecta
+        return chosen !== undefined && chosen !== p.a;
       });
     } else if(currentFilter === 'doubt') {
       return PREGUNTAS.filter(p => listState.doubts[p.n] === true);
@@ -207,10 +212,41 @@ main{padding:15px;max-width:900px;margin:0 auto;display:flex;flex-direction:colu
     return PREGUNTAS;
   }
 
-  // Iniciar una nueva ronda (congela la lista para no saltarse preguntas)
   function startNewRound() {
     currentList = getFilteredQuestions();
     currentIdx = 0;
+    render();
+  }
+
+  function startSimulacro() {
+    // 1. Filtrar solo las NO aprobadas (las no contestadas, las falladas y las dudosas)
+    const unapproved = PREGUNTAS.filter(p => {
+        const ans = listState.answers[p.n];
+        const isDoubt = listState.doubts[p.n] === true;
+        const isCorrect = ans === p.a;
+        const isApproved = isCorrect && !isDoubt; 
+        return !isApproved;
+    });
+
+    if (unapproved.length === 0) {
+        alert("¡Enhorabuena! Ya tienes las 300 preguntas aprobadas. Puedes reiniciar el progreso si quieres volver a estudiar.");
+        return;
+    }
+
+    // 2. Mezclar las restantes y coger hasta 50
+    const shuffled = [...unapproved].sort(() => 0.5 - Math.random());
+    currentList = shuffled.slice(0, 50);
+    currentIdx = 0;
+    examScore = 0;
+    
+    currentFilter = 'exam';
+    $('filterAll').classList.remove('active');
+    $('filterFailed').classList.remove('active');
+    $('filterDoubt').classList.remove('active');
+    $('filterExam').classList.add('active');
+    
+    stopSpeak();
+    stopListening();
     render();
   }
 
@@ -222,6 +258,7 @@ main{padding:15px;max-width:900px;margin:0 auto;display:flex;flex-direction:colu
     $('filterAll').classList.toggle('active', filter === 'all');
     $('filterFailed').classList.toggle('active', filter === 'failed');
     $('filterDoubt').classList.toggle('active', filter === 'doubt');
+    $('filterExam').classList.remove('active');
     
     startNewRound();
   }
@@ -229,10 +266,16 @@ main{padding:15px;max-width:900px;margin:0 auto;display:flex;flex-direction:colu
   $('filterAll').onclick = () => setFilter('all');
   $('filterFailed').onclick = () => setFilter('failed');
   $('filterDoubt').onclick = () => setFilter('doubt');
+  $('filterExam').onclick = startSimulacro;
+  $('btnNewExam').onclick = startSimulacro;
   $('btnGoAll').onclick = () => setFilter('all');
   
   $('btnRepeatRound').onclick = () => {
-    startNewRound();
+    if(currentFilter === 'exam') {
+        startSimulacro(); 
+    } else {
+        startNewRound();
+    }
   };
 
   $('jumpBtn').onclick = () => {
@@ -245,18 +288,12 @@ main{padding:15px;max-width:900px;margin:0 auto;display:flex;flex-direction:colu
     let idx = currentList.findIndex(p => p.n === targetNum);
     
     if(idx === -1) {
-        // No está en la lista actual
         if(currentFilter === 'all') {
-            // Si estamos en "todas" y no la encuentra, es un error
             alert("Pregunta no encontrada.");
             return;
         }
         alert("Esa pregunta no está en este filtro. Cambiando a 'Todas'...");
-        currentFilter = 'all';
-        $('filterAll').classList.add('active');
-        $('filterFailed').classList.remove('active');
-        $('filterDoubt').classList.remove('active');
-        currentList = PREGUNTAS;
+        setFilter('all');
         idx = currentList.findIndex(p => p.n === targetNum);
     }
     
@@ -341,7 +378,16 @@ main{padding:15px;max-width:900px;margin:0 auto;display:flex;flex-direction:colu
     u.lang='es-ES';
     u.pitch=0.8;
     u.rate=parseFloat(rateSlider.value);
+    
+    const timeoutId = setTimeout(() => { isSpeaking = false; }, text.length * 100 + 1000);
+
     u.onend = () => {
+      clearTimeout(timeoutId);
+      isSpeaking = false;
+      if(onEnd) onEnd();
+    };
+    u.onerror = () => {
+      clearTimeout(timeoutId);
       isSpeaking = false;
       if(onEnd) onEnd();
     };
@@ -363,7 +409,6 @@ main{padding:15px;max-width:900px;margin:0 auto;display:flex;flex-direction:colu
   function render(){
     const numEl=$('num'), enEl=$('enunciado'), opcEl=$('opciones'), resEl=$('resultado');
     
-    // COMPROBAR FIN DE RONDA
     if(currentList.length === 0 || currentIdx >= currentList.length){
       questionCard.style.display = 'none';
       controlsArea.style.display = 'none';
@@ -372,18 +417,26 @@ main{padding:15px;max-width:900px;margin:0 auto;display:flex;flex-direction:colu
       
       if(currentList.length === 0) {
           $('summaryTitle').textContent = '🎉 ¡Todo limpio!';
-          $('summaryText').textContent = 'No tienes preguntas en este filtro (ni falladas ni dudosas). ¡Buen trabajo!';
-          $('btnRepeatRound').style.display = 'none'; // Ocultar si no hay nada
+          $('summaryText').textContent = 'No tienes preguntas pendientes en este filtro. ¡Buen trabajo!';
+          $('btnRepeatRound').style.display = 'none'; 
+          $('btnNewExam').style.display = 'none';
       } else {
-          $('summaryTitle').textContent = '🎉 ¡Has completado esta ronda!';
-          $('summaryText').textContent = 'Has repasado esta lista. Si quieres seguir practicando las que fallaste o dudaste, pulsa el botón de abajo.';
-          $('btnRepeatRound').style.display = 'block';
+          if(currentFilter === 'exam') {
+              $('summaryTitle').textContent = '📝 Simulacro Finalizado';
+              $('summaryText').textContent = `Has acertado ${examScore} de ${currentList.length} preguntas. Puedes repetir otro simulacro para seguir aprobando.`;
+              $('btnNewExam').style.display = 'block';
+              $('btnRepeatRound').style.display = 'none';
+          } else {
+              $('summaryTitle').textContent = '🎉 ¡Has completado esta ronda!';
+              $('summaryText').textContent = 'Has repasado esta lista. Si quieres seguir practicando las que fallaste o dudaste, pulsa el botón de abajo.';
+              $('btnRepeatRound').style.display = 'block';
+              $('btnNewExam').style.display = 'none';
+          }
       }
       updateStats();
       return;
     }
     
-    // MOSTRAR PREGUNTA
     questionCard.style.display = 'block';
     controlsArea.style.display = 'flex';
     statusArea.style.display = 'flex';
@@ -448,6 +501,8 @@ main{padding:15px;max-width:900px;margin:0 auto;display:flex;flex-direction:colu
     doubtBtn.classList.toggle('active', isDoubt);
     doubtBtn.innerHTML = isDoubt ? '⭐ Es dudosa' : '🤔 Marcar dudosa';
     questionCard.classList.toggle('is-doubt', isDoubt);
+    
+    updateStats();
   };
 
   function answer(p,choose){
@@ -460,6 +515,10 @@ main{padding:15px;max-width:900px;margin:0 auto;display:flex;flex-direction:colu
       if(idx===choose&&choose!==p.a)b.classList.add('wrong');
     });
     const resEl=$('resultado');
+    
+    if(currentFilter === 'exam' && choose === p.a) {
+        examScore++;
+    }
     
     if(choose===p.a){
       resEl.textContent='✅ Correcto';resEl.className='resultado ok';
@@ -478,14 +537,37 @@ main{padding:15px;max-width:900px;margin:0 auto;display:flex;flex-direction:colu
   }
 
   function updateStats(){
-    let ok=0,ko=0;
+    let ok=0,ko=0, approved=0;
     for(const k in listState.answers){
       const n=parseInt(k,10);
       const p=PREGUNTAS.find(x=>x.n===n);
       if(!p)continue;
-      if(listState.answers[k]===p.a)ok++;else ko++;
+      if(listState.answers[k]===p.a){
+          ok++;
+          if(!listState.doubts[p.n]) {
+              approved++;
+          }
+      } else {
+          ko++;
+      }
     }
-    $('okCount').textContent=ok;$('koCount').textContent=ko;
+    
+    $('okCount').textContent=ok;
+    $('koCount').textContent=ko;
+    $('approvedCount').textContent=approved;
+    
+    const unapprovedCount = 300 - approved;
+    const examBtn = $('filterExam');
+    if (unapprovedCount === 0) {
+        examBtn.textContent = "🏆 Todo Aprobado";
+        examBtn.disabled = true;
+    } else if (unapprovedCount < 50) {
+        examBtn.textContent = `📝 Simulacro (${unapprovedCount})`;
+        examBtn.disabled = false;
+    } else {
+        examBtn.textContent = "📝 Simulacro (50)";
+        examBtn.disabled = false;
+    }
     
     if(currentList.length > 0 && currentIdx < currentList.length) {
         $('prog').textContent=(currentIdx+1)+'/'+currentList.length;
@@ -536,7 +618,7 @@ main{padding:15px;max-width:900px;margin:0 auto;display:flex;flex-direction:colu
   }
 
   function startListening(){
-    if(!recognition || listening || isSpeaking) return;
+    if(!recognition || listening) return;
     try{
       recognition.start();
       listening=true;
@@ -556,7 +638,7 @@ main{padding:15px;max-width:900px;margin:0 auto;display:flex;flex-direction:colu
   function handleVoiceCommand(text){
     if(currentIdx >= currentList.length) {
         if(/(todas|volver)/.test(text)){ setFilter('all'); }
-        if(/(repetir|ronda)/.test(text)){ startNewRound(); }
+        if(/(repetir|ronda|examen|simulacro)/.test(text)){ startSimulacro(); }
         return;
     }
     
@@ -596,11 +678,12 @@ main{padding:15px;max-width:900px;margin:0 auto;display:flex;flex-direction:colu
       stopListening();
       render();
     }else{
-      currentIdx++; // Forzar salida para mostrar el resumen
+      currentIdx++; 
       stopSpeak();
       stopListening();
       render();
-      speak('Has terminado esta ronda.');
+      if(currentFilter === 'exam') speak('Simulacro terminado.');
+      else speak('Has terminado esta ronda.');
     }
   }
 
@@ -703,7 +786,7 @@ main{padding:15px;max-width:900px;margin:0 auto;display:flex;flex-direction:colu
 
   if(checkLoad()){
     initVoice();
-    setFilter('all'); // Inicia mostrando todas
+    setFilter('all'); 
   }
   if('serviceWorker' in navigator){
     navigator.serviceWorker.register('service-worker.js').catch(()=>{});
