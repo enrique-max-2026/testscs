@@ -131,7 +131,10 @@ main{padding:15px;max-width:900px;margin:0 auto;display:flex;flex-direction:colu
   <div class="pregunta" id="questionCard">
     <div class="question-header">
       <div class="num" id="num">Cargando…</div>
-      <button id="doubtBtn" class="doubt-btn">🤔 Marcar dudosa</button>
+      <div style="display:flex; gap:5px;">
+        <button id="resetBtn" class="doubt-btn" title="Volver a contestar esta pregunta">🔄 Reintentar</button>
+        <button id="doubtBtn" class="doubt-btn">🤔 Marcar dudosa</button>
+      </div>
     </div>
     <div class="enunciado" id="enunciado"></div>
     <div class="opciones" id="opciones"></div>
@@ -175,7 +178,9 @@ main{padding:15px;max-width:900px;margin:0 auto;display:flex;flex-direction:colu
   let currentList = []; 
   let currentIdx = 0;
   let currentFilter='all'; 
-  let examScore = 0;
+  
+  // Guarda las respuestas solo de la ronda actual
+  let roundAnswers = {};
   
   let audioOn=true, handsfree=false, listening=false, isSpeaking=false;
   let timerInterval = null;
@@ -192,6 +197,7 @@ main{padding:15px;max-width:900px;margin:0 auto;display:flex;flex-direction:colu
   const handsfreeToggle = $('handsfreeToggle');
   const micBtn = $('micBtn');
   const doubtBtn = $('doubtBtn');
+  const resetBtn = $('resetBtn');
   const timerToggle = $('timerToggle');
   const timerDisplay = $('timerDisplay');
   
@@ -224,6 +230,7 @@ main{padding:15px;max-width:900px;margin:0 auto;display:flex;flex-direction:colu
   }
 
   function startNewRound() {
+    roundAnswers = {}; // Resetea las respuestas de la vista actual
     currentList = getFilteredQuestions();
     currentIdx = 0;
     stopTimer();
@@ -246,7 +253,8 @@ main{padding:15px;max-width:900px;margin:0 auto;display:flex;flex-direction:colu
     const shuffled = [...unapproved].sort(() => 0.5 - Math.random());
     currentList = shuffled.slice(0, 50);
     currentIdx = 0;
-    examScore = 0;
+    
+    roundAnswers = {}; // Resetea las respuestas del simulacro
     
     currentFilter = 'exam';
     $('filterAll').classList.remove('active');
@@ -419,7 +427,6 @@ main{padding:15px;max-width:900px;margin:0 auto;display:flex;flex-direction:colu
     u.pitch=0.8;
     u.rate=parseFloat(rateSlider.value);
     
-    // Seguro anti-bloqueo (si el audio falla en Windows, no se queda pillado)
     const timeoutId = setTimeout(() => { isSpeaking = false; }, text.length * 100 + 2000);
 
     u.onend = () => {
@@ -465,6 +472,12 @@ main{padding:15px;max-width:900px;margin:0 auto;display:flex;flex-direction:colu
           if(currentFilter === 'exam') {
               stopTimer();
               $('summaryTitle').textContent = '📝 Simulacro Finalizado';
+              
+              let examScore = 0;
+              currentList.forEach(p => {
+                  if (roundAnswers[p.n] === p.a) examScore++;
+              });
+              
               const timeStr = timerToggle.checked ? ` en ${Math.floor(timeElapsed / 60)} min y ${timeElapsed % 60} seg` : '';
               $('summaryText').textContent = `Has acertado ${examScore} de ${currentList.length} preguntas${timeStr}.`;
               $('btnNewExam').style.display = 'block';
@@ -491,13 +504,19 @@ main{padding:15px;max-width:900px;margin:0 auto;display:flex;flex-direction:colu
     $('jumpInput').value = p.n;
     enEl.textContent=p.q;
     opcEl.innerHTML='';
-    const prev=listState.answers[p.n];
+    
+    // Importante: leemos de roundAnswers, no de listState.answers
+    const prev = roundAnswers[p.n]; 
+    
     const letras=['1','2','3','4'];
     
     const isDoubt = listState.doubts[p.n] === true;
     doubtBtn.classList.toggle('active', isDoubt);
     doubtBtn.innerHTML = isDoubt ? '⭐ Es dudosa' : '🤔 Marcar dudosa';
     questionCard.classList.toggle('is-doubt', isDoubt);
+    
+    // Mostrar u ocultar botón de reintentar
+    resetBtn.style.display = (prev !== undefined) ? 'inline-block' : 'none';
 
     p.o.forEach((op,i)=>{
       const b=document.createElement('button');
@@ -528,12 +547,24 @@ main{padding:15px;max-width:900px;margin:0 auto;display:flex;flex-direction:colu
         let t='Pregunta '+p.n+'. '+p.q+'. ';
         p.o.forEach((op,i)=>{t+=(i+1)+': '+op+'. ';}); 
         speak(t, () => {
-          // Retraso de 2 segundos para evitar conflictos de Bluetooth en Windows
           if(handsfree) setTimeout(() => startListening(), 2000);
         });
       }, 250);
     }
   }
+
+  resetBtn.onclick = () => {
+    if(currentList.length === 0 || currentIdx >= currentList.length) return;
+    const p = currentList[currentIdx];
+    if(confirm('¿Quieres volver a contestar esta pregunta? Se borrará tu respuesta anterior.')){
+        delete roundAnswers[p.n];
+        delete listState.answers[p.n];
+        saveState();
+        stopSpeak();
+        stopListening();
+        render();
+    }
+  };
 
   doubtBtn.onclick = () => {
     if(currentList.length === 0 || currentIdx >= currentList.length) return;
@@ -551,8 +582,11 @@ main{padding:15px;max-width:900px;margin:0 auto;display:flex;flex-direction:colu
   };
 
   function answer(p,choose){
+    // Guardamos en la ronda y en el historial global
+    roundAnswers[p.n] = choose;
     listState.answers[p.n]=choose;
     saveState();
+    
     document.querySelectorAll('.opcion').forEach(b=>{
       b.disabled=true;
       const idx=parseInt(b.dataset.idx,10);
@@ -560,10 +594,6 @@ main{padding:15px;max-width:900px;margin:0 auto;display:flex;flex-direction:colu
       if(idx===choose&&choose!==p.a)b.classList.add('wrong');
     });
     const resEl=$('resultado');
-    
-    if(currentFilter === 'exam' && choose === p.a) {
-        examScore++;
-    }
     
     if(choose===p.a){
       resEl.textContent='✅ Correcto';resEl.className='resultado ok';
@@ -578,6 +608,8 @@ main{padding:15px;max-width:900px;margin:0 auto;display:flex;flex-direction:colu
         if(handsfree) setTimeout(() => nextQuestion(), 1500);
       });
     }
+    
+    resetBtn.style.display = 'inline-block';
     updateStats();
   }
 
@@ -646,7 +678,6 @@ main{padding:15px;max-width:900px;margin:0 auto;display:flex;flex-direction:colu
       micBtn.classList.remove('escuchando');
       $('micStatus').textContent = '';
       
-      // Si Windows bloquea el micro, forzamos el reinicio del estado
       if(e.error==='not-allowed'){
         $('micStatus').textContent='Permiso denegado. Revisa la configuración de Windows.';
       }else if(e.error==='no-speech'){
@@ -663,9 +694,8 @@ main{padding:15px;max-width:900px;margin:0 auto;display:flex;flex-direction:colu
     recognition.onend=()=>{
       listening=false;
       micBtn.classList.remove('escuchando');
-      // Si está en manos libres y se cierra por timeout natural, reabrir
       if(handsfree && !isSpeaking && currentIdx < currentList.length) {
-          if(!listState.answers[currentList[currentIdx].n]) {
+          if(!roundAnswers[currentList[currentIdx].n]) {
               setTimeout(() => startListening(), 1000);
           }
       } else if(!handsfree) {
@@ -683,7 +713,6 @@ main{padding:15px;max-width:900px;margin:0 auto;display:flex;flex-direction:colu
       $('micStatus').textContent='Escuchando… Di la opción (1 a 4)';
     }catch(e){
       listening=false;
-      // Si falla el arranque, esperamos y reintentamos
       if(handsfree) setTimeout(startListening, 1500);
     }
   }
@@ -704,7 +733,7 @@ main{padding:15px;max-width:900px;margin:0 auto;display:flex;flex-direction:colu
     }
     
     const p=currentList[currentIdx];
-    const prev=listState.answers[p.n];
+    const prev=roundAnswers[p.n];
 
     if(/(siguiente|avanzar|adelante)/.test(text)){nextQuestion();return;}
     if(/(atr[aá]s|anterior|volver)/.test(text)){if(currentIdx>0){currentIdx--;stopSpeak();stopListening();render();}return;}
@@ -765,7 +794,7 @@ main{padding:15px;max-width:900px;margin:0 auto;display:flex;flex-direction:colu
     if (handsfree && currentIdx < currentList.length) {
       const p = currentList[currentIdx];
       if (p) {
-        const prev = listState.answers[p.n];
+        const prev = roundAnswers[p.n];
         if (prev === undefined) {
           let t = 'Pregunta ' + p.n + '. ' + p.q + '. ';
           p.o.forEach((op, i) => { t += (i + 1) + ': ' + op + '. '; });
@@ -806,6 +835,7 @@ main{padding:15px;max-width:900px;margin:0 auto;display:flex;flex-direction:colu
     if(confirm('¿Borrar todo el progreso, fallos y dudas marcadas?')){
       listState.answers={};
       listState.doubts={};
+      roundAnswers={};
       saveState();
       setFilter('all');
     }
