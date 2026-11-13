@@ -20,16 +20,19 @@ header{background:var(--bg);border-bottom:2px solid var(--border);padding:10px;d
 .header-row h1{font-size:1.1rem;margin:0;}
 .header-row .stats{font-size:0.9rem;font-weight:bold;margin-right:auto;padding-left:10px;}
 .header-row button{font-size:0.9rem;padding:8px 12px;cursor:pointer;border-radius:8px;border:2px solid var(--border);background:var(--card);color:var(--fg);font-weight:bold;}
+.timer-display{font-size:1.1rem;font-weight:bold;color:var(--exam);display:none;padding:5px 10px;background:rgba(124,58,237,0.1);border-radius:8px;}
+
 .jump-box{display:flex;align-items:center;gap:5px;background:var(--card);padding:5px 10px;border-radius:8px;border:1px solid var(--border);}
 .jump-box input{width:60px;padding:5px;border-radius:5px;border:1px solid var(--border);font-size:0.9rem;text-align:center;background:var(--bg);color:var(--fg);}
 .jump-box button{background:var(--btn);color:var(--btn-fg);border:none;padding:5px 10px;border-radius:5px;cursor:pointer;}
 
-.header-filters{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;}
+.header-filters{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;align-items:center;}
 .filter-btn{flex:1;min-width:120px;max-width:200px;padding:10px;border-radius:8px;border:2px solid var(--border);background:var(--card);color:var(--fg);font-weight:bold;cursor:pointer;font-size:0.95rem;}
 .filter-btn.active{background:var(--btn);color:var(--btn-fg);border-color:var(--btn);}
 .filter-btn.doubt.active{background:var(--doubt);border-color:var(--doubt);color:#fff;}
 .filter-btn.failed.active{background:var(--ko);border-color:var(--ko);color:#fff;}
 .filter-btn.exam.active{background:var(--exam);border-color:var(--exam);color:#fff;}
+.exam-toggle{display:flex;align-items:center;gap:5px;font-size:0.9rem;font-weight:bold;cursor:pointer;background:var(--card);padding:8px 12px;border-radius:8px;border:1px solid var(--border);}
 
 .header-config{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:center;font-size:0.9rem;background:var(--card);padding:8px;border-radius:10px;border:1px solid var(--border)}
 .header-config select{padding:6px;border-radius:6px;font-size:0.9rem;border:1px solid var(--border);background:var(--bg);color:var(--fg);max-width:150px;}
@@ -94,6 +97,7 @@ main{padding:15px;max-width:900px;margin:0 auto;display:flex;flex-direction:colu
   <div class="header-row">
     <h1>Test SCS · <span id="prog">0/300</span></h1>
     <div class="stats">✅ <span id="okCount">0</span> · ❌ <span id="koCount">0</span> · 🏆 <span id="approvedCount">0</span>/300</div>
+    <div class="timer-display" id="timerDisplay">⏱️ 00:00</div>
     <div class="jump-box">
       <label>Ir a:</label>
       <input type="number" id="jumpInput" min="1" max="300" value="1">
@@ -108,6 +112,9 @@ main{padding:15px;max-width:900px;margin:0 auto;display:flex;flex-direction:colu
     <button id="filterFailed" class="filter-btn failed">📋 Falladas</button>
     <button id="filterDoubt" class="filter-btn doubt">🤔 Dudosas</button>
     <button id="filterExam" class="filter-btn exam">📝 Simulacro (50)</button>
+    <label class="exam-toggle">
+      <input type="checkbox" id="timerToggle"> ⏱️ Cronómetro
+    </label>
   </div>
   <div class="header-filters">
     <button id="restart" class="filter-btn" style="max-width:100%;">🔄 Reiniciar todo el progreso</button>
@@ -171,6 +178,8 @@ main{padding:15px;max-width:900px;margin:0 auto;display:flex;flex-direction:colu
   let examScore = 0;
   
   let audioOn=true, handsfree=false, listening=false, isSpeaking=false;
+  let timerInterval = null;
+  let timeElapsed = 0;
   
   const synth=window.speechSynthesis;
   const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
@@ -183,6 +192,8 @@ main{padding:15px;max-width:900px;margin:0 auto;display:flex;flex-direction:colu
   const handsfreeToggle = $('handsfreeToggle');
   const micBtn = $('micBtn');
   const doubtBtn = $('doubtBtn');
+  const timerToggle = $('timerToggle');
+  const timerDisplay = $('timerDisplay');
   
   const questionCard = $('questionCard');
   const summaryScreen = $('summaryScreen');
@@ -215,25 +226,23 @@ main{padding:15px;max-width:900px;margin:0 auto;display:flex;flex-direction:colu
   function startNewRound() {
     currentList = getFilteredQuestions();
     currentIdx = 0;
+    stopTimer();
     render();
   }
 
   function startSimulacro() {
-    // 1. Filtrar solo las NO aprobadas (las no contestadas, las falladas y las dudosas)
     const unapproved = PREGUNTAS.filter(p => {
         const ans = listState.answers[p.n];
         const isDoubt = listState.doubts[p.n] === true;
         const isCorrect = ans === p.a;
-        const isApproved = isCorrect && !isDoubt; 
-        return !isApproved;
+        return !(isCorrect && !isDoubt);
     });
 
     if (unapproved.length === 0) {
-        alert("¡Enhorabuena! Ya tienes las 300 preguntas aprobadas. Puedes reiniciar el progreso si quieres volver a estudiar.");
+        alert("¡Enhorabuena! Ya tienes las 300 preguntas aprobadas.");
         return;
     }
 
-    // 2. Mezclar las restantes y coger hasta 50
     const shuffled = [...unapproved].sort(() => 0.5 - Math.random());
     currentList = shuffled.slice(0, 50);
     currentIdx = 0;
@@ -247,6 +256,13 @@ main{padding:15px;max-width:900px;margin:0 auto;display:flex;flex-direction:colu
     
     stopSpeak();
     stopListening();
+    
+    if (timerToggle.checked) {
+        startTimer();
+    } else {
+        stopTimer();
+    }
+    
     render();
   }
 
@@ -254,6 +270,7 @@ main{padding:15px;max-width:900px;margin:0 auto;display:flex;flex-direction:colu
     currentFilter = filter;
     stopSpeak();
     stopListening();
+    stopTimer();
     
     $('filterAll').classList.toggle('active', filter === 'all');
     $('filterFailed').classList.toggle('active', filter === 'failed');
@@ -304,6 +321,29 @@ main{padding:15px;max-width:900px;margin:0 auto;display:flex;flex-direction:colu
         render();
     }
   };
+
+  // Funciones del Cronómetro
+  function startTimer() {
+    stopTimer();
+    timeElapsed = 0;
+    timerDisplay.style.display = 'block';
+    timerDisplay.textContent = '⏱️ 00:00';
+    
+    timerInterval = setInterval(() => {
+        timeElapsed++;
+        const mins = String(Math.floor(timeElapsed / 60)).padStart(2, '0');
+        const secs = String(timeElapsed % 60).padStart(2, '0');
+        timerDisplay.textContent = `⏱️ ${mins}:${secs}`;
+    }, 1000);
+  }
+
+  function stopTimer() {
+    if (timerInterval) {
+        clearInterval(timerInterval);
+        timerInterval = null;
+    }
+    timerDisplay.style.display = 'none';
+  }
 
   // Configuración de voz
   const savedRate = localStorage.getItem('test_scs_rate');
@@ -379,7 +419,8 @@ main{padding:15px;max-width:900px;margin:0 auto;display:flex;flex-direction:colu
     u.pitch=0.8;
     u.rate=parseFloat(rateSlider.value);
     
-    const timeoutId = setTimeout(() => { isSpeaking = false; }, text.length * 100 + 1000);
+    // Seguro anti-bloqueo (si el audio falla en Windows, no se queda pillado)
+    const timeoutId = setTimeout(() => { isSpeaking = false; }, text.length * 100 + 2000);
 
     u.onend = () => {
       clearTimeout(timeoutId);
@@ -422,11 +463,14 @@ main{padding:15px;max-width:900px;margin:0 auto;display:flex;flex-direction:colu
           $('btnNewExam').style.display = 'none';
       } else {
           if(currentFilter === 'exam') {
+              stopTimer();
               $('summaryTitle').textContent = '📝 Simulacro Finalizado';
-              $('summaryText').textContent = `Has acertado ${examScore} de ${currentList.length} preguntas. Puedes repetir otro simulacro para seguir aprobando.`;
+              const timeStr = timerToggle.checked ? ` en ${Math.floor(timeElapsed / 60)} min y ${timeElapsed % 60} seg` : '';
+              $('summaryText').textContent = `Has acertado ${examScore} de ${currentList.length} preguntas${timeStr}.`;
               $('btnNewExam').style.display = 'block';
               $('btnRepeatRound').style.display = 'none';
           } else {
+              stopTimer();
               $('summaryTitle').textContent = '🎉 ¡Has completado esta ronda!';
               $('summaryText').textContent = 'Has repasado esta lista. Si quieres seguir practicando las que fallaste o dudaste, pulsa el botón de abajo.';
               $('btnRepeatRound').style.display = 'block';
@@ -484,6 +528,7 @@ main{padding:15px;max-width:900px;margin:0 auto;display:flex;flex-direction:colu
         let t='Pregunta '+p.n+'. '+p.q+'. ';
         p.o.forEach((op,i)=>{t+=(i+1)+': '+op+'. ';}); 
         speak(t, () => {
+          // Retraso de 2 segundos para evitar conflictos de Bluetooth en Windows
           if(handsfree) setTimeout(() => startListening(), 2000);
         });
       }, 250);
@@ -523,14 +568,14 @@ main{padding:15px;max-width:900px;margin:0 auto;display:flex;flex-direction:colu
     if(choose===p.a){
       resEl.textContent='✅ Correcto';resEl.className='resultado ok';
       speak('Correcto.', () => {
-        if(handsfree) setTimeout(() => nextQuestion(), 1000);
+        if(handsfree) setTimeout(() => nextQuestion(), 1500);
       });
     }else{
       resEl.textContent='❌ Incorrecto. La correcta es la opción '+p.a;
       resEl.className='resultado ko';
       const msg = 'Incorrecto. La respuesta correcta es la ' + p.a + ': ' + p.o[p.a-1];
       speak(msg, () => {
-        if(handsfree) setTimeout(() => nextQuestion(), 1000);
+        if(handsfree) setTimeout(() => nextQuestion(), 1500);
       });
     }
     updateStats();
@@ -600,20 +645,32 @@ main{padding:15px;max-width:900px;margin:0 auto;display:flex;flex-direction:colu
       listening=false;
       micBtn.classList.remove('escuchando');
       $('micStatus').textContent = '';
+      
+      // Si Windows bloquea el micro, forzamos el reinicio del estado
       if(e.error==='not-allowed'){
-        $('micStatus').textContent='Permiso denegado. Necesitas HTTPS.';
+        $('micStatus').textContent='Permiso denegado. Revisa la configuración de Windows.';
       }else if(e.error==='no-speech'){
-        if(handsfree) setTimeout(() => startListening(), 1000);
+        if(handsfree) setTimeout(() => startListening(), 1500);
         else $('micStatus').textContent='No te he oído. Pulsa 🎤 otra vez.';
+      }else if(e.error==='network'){
+        $('micStatus').textContent='Error de red. El micro usa los servidores de Google.';
       }else{
-        $('micStatus').textContent='Error de micro: '+e.error;
+        $('micStatus').textContent='Error de micro: '+e.error + '. Reintentando...';
+        if(handsfree) setTimeout(() => startListening(), 1500);
       }
     };
     
     recognition.onend=()=>{
       listening=false;
       micBtn.classList.remove('escuchando');
-      if(!handsfree) $('micStatus').textContent='Pulsa el micro para hablar';
+      // Si está en manos libres y se cierra por timeout natural, reabrir
+      if(handsfree && !isSpeaking && currentIdx < currentList.length) {
+          if(!listState.answers[currentList[currentIdx].n]) {
+              setTimeout(() => startListening(), 1000);
+          }
+      } else if(!handsfree) {
+          $('micStatus').textContent='Pulsa el micro para hablar';
+      }
     };
   }
 
@@ -624,12 +681,16 @@ main{padding:15px;max-width:900px;margin:0 auto;display:flex;flex-direction:colu
       listening=true;
       micBtn.classList.add('escuchando');
       $('micStatus').textContent='Escuchando… Di la opción (1 a 4)';
-    }catch(e){listening=false;}
+    }catch(e){
+      listening=false;
+      // Si falla el arranque, esperamos y reintentamos
+      if(handsfree) setTimeout(startListening, 1500);
+    }
   }
 
   function stopListening(){
     if(!recognition||!listening)return;
-    try{recognition.stop();}catch(e){}
+    try{recognition.abort();}catch(e){}
     listening=false;
     micBtn.classList.remove('escuchando');
     $('micStatus').textContent = handsfree ? 'Modo manos libres activo' : 'Pulsa el micro para hablar';
@@ -663,7 +724,7 @@ main{padding:15px;max-width:900px;margin:0 auto;display:flex;flex-direction:colu
       if(btn&&!btn.disabled)btn.click();
     }else{
       if(handsfree) {
-        $('micStatus').textContent = 'No entendido. Vuelve a decir la opción.';
+        $('micStatus').textContent = 'No entendido. Escuchando otra vez...';
         setTimeout(() => startListening(), 1000);
       } else {
         speak('No te he entendido. Di uno, dos, tres o cuatro.');
