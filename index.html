@@ -9,26 +9,40 @@
 <link rel="icon" href="icon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="icon.svg">
 <style>
-:root{--bg:#fff;--fg:#111;--card:#f4f4f4;--btn:#0055aa;--btn-fg:#fff;--ok:#1b7a1b;--ko:#b00020;--border:#ccc;--mic:#c62828}
-[data-theme="dark"]{--bg:#111;--fg:#f0f0f0;--card:#1e1e1e;--btn:#3399ff;--btn-fg:#000;--ok:#4caf50;--ko:#ff5252;--border:#444;--mic:#ff5252}
+:root{--bg:#fff;--fg:#111;--card:#f4f4f4;--btn:#0055aa;--btn-fg:#fff;--ok:#1b7a1b;--ko:#b00020;--border:#ccc;--mic:#c62828;--doubt:#d97706;}
+[data-theme="dark"]{--bg:#111;--fg:#f0f0f0;--card:#1e1e1e;--btn:#3399ff;--btn-fg:#000;--ok:#4caf50;--ko:#ff5252;--border:#444;--mic:#ff5252;--doubt:#f59e0b;}
 *{box-sizing:border-box}
 body{margin:0;background:var(--bg);color:var(--fg);font-family:system-ui,-apple-system,"Segoe UI",Arial,sans-serif;font-size:20px;line-height:1.5;display:flex;flex-direction:column;min-height:100vh;}
 
-/* CABECERA: Todo lo demás va aquí arriba */
+/* CABECERA */
 header{background:var(--bg);border-bottom:2px solid var(--border);padding:10px;display:flex;flex-direction:column;gap:8px;z-index:10}
 .header-row{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between}
 .header-row h1{font-size:1.1rem;margin:0;}
 .header-row .stats{font-size:0.9rem;font-weight:bold;margin-right:auto;padding-left:10px;}
 .header-row button{font-size:0.9rem;padding:8px 12px;cursor:pointer;border-radius:8px;border:2px solid var(--border);background:var(--card);color:var(--fg);font-weight:bold;}
-.header-row button.active{background:var(--btn);color:var(--btn-fg);border-color:var(--btn);}
+.jump-box{display:flex;align-items:center;gap:5px;background:var(--card);padding:5px 10px;border-radius:8px;border:1px solid var(--border);}
+.jump-box input{width:60px;padding:5px;border-radius:5px;border:1px solid var(--border);font-size:0.9rem;text-align:center;background:var(--bg);color:var(--fg);}
+.jump-box button{background:var(--btn);color:var(--btn-fg);border:none;padding:5px 10px;border-radius:5px;cursor:pointer;}
+
+.header-filters{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;}
+.filter-btn{flex:1;min-width:120px;max-width:200px;padding:10px;border-radius:8px;border:2px solid var(--border);background:var(--card);color:var(--fg);font-weight:bold;cursor:pointer;font-size:0.95rem;}
+.filter-btn.active{background:var(--btn);color:var(--btn-fg);border-color:var(--btn);}
+.filter-btn.doubt.active{background:var(--doubt);border-color:var(--doubt);color:#fff;}
+.filter-btn.failed.active{background:var(--ko);border-color:var(--ko);color:#fff;}
+
 .header-config{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:center;font-size:0.9rem;background:var(--card);padding:8px;border-radius:10px;border:1px solid var(--border)}
 .header-config select{padding:6px;border-radius:6px;font-size:0.9rem;border:1px solid var(--border);background:var(--bg);color:var(--fg);max-width:150px;}
 .header-config input[type="range"]{width:90px;cursor:pointer;}
 .header-config button{padding:6px 10px;border-radius:6px;background:var(--btn);color:var(--btn-fg);border:none;cursor:pointer;font-size:0.85rem;font-weight:bold;}
 
 main{padding:15px;max-width:900px;margin:0 auto;display:flex;flex-direction:column;gap:15px;flex:1;width:100%;}
-.pregunta{background:var(--card);border-radius:12px;padding:15px}
-.num{font-weight:bold;font-size:1.1rem;margin-bottom:10px}
+.pregunta{background:var(--card);border-radius:12px;padding:15px;border:2px solid transparent;}
+.pregunta.is-doubt{border-color:var(--doubt);}
+.question-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;}
+.num{font-weight:bold;font-size:1.1rem;}
+.doubt-btn{background:var(--bg);border:1px solid var(--border);color:var(--fg);padding:5px 10px;border-radius:8px;font-size:0.9rem;cursor:pointer;font-weight:bold;}
+.doubt-btn.active{background:var(--doubt);color:#fff;border-color:var(--doubt);}
+
 .enunciado{font-size:1.15rem;margin-bottom:15px}
 .opciones{display:flex;flex-direction:column;gap:10px}
 .opcion{background:var(--bg);color:var(--fg);border:2px solid var(--border);border-radius:10px;padding:15px;font-size:1.1rem;text-align:left;cursor:pointer;display:flex;gap:10px;align-items:flex-start;font-family:inherit}
@@ -40,78 +54,56 @@ main{padding:15px;max-width:900px;margin:0 auto;display:flex;flex-direction:colu
 .resultado.ok{background:rgba(76,175,80,.25);color:var(--ok);display:block}
 .resultado.ko{background:rgba(255,82,82,.25);color:var(--ko);display:block}
 
-/* FILA INFERIOR: Micro a la izquierda y los otros 3 al lado */
-.bottom-controls {
-  display: flex;
-  flex-direction: row;
-  justify-content: center;
-  align-items: center;
-  gap: 15px;
-  margin-top: 20px;
-  margin-bottom: 10px;
-  flex-wrap: wrap; 
-}
-.btn-mic {
-  width: 130px; 
-  height: 130px; 
-  border-radius: 50%; 
-  font-size: 5rem; 
-  background: var(--mic); 
-  color: white; 
-  border: none; 
-  box-shadow: 0 6px 15px rgba(0,0,0,0.4); 
-  cursor: pointer; 
-  display: flex; 
-  align-items: center; 
-  justify-content: center; 
-  transition: transform 0.1s;
-}
+/* FILA INFERIOR */
+.bottom-controls {display: flex;flex-direction: row;justify-content: center;align-items: center;gap: 15px;margin-top: 20px;margin-bottom: 10px;flex-wrap: wrap;}
+.btn-mic {width: 130px;height: 130px;border-radius: 50%;font-size: 5rem;background: var(--mic);color: white;border: none;box-shadow: 0 6px 15px rgba(0,0,0,0.4);cursor: pointer;display: flex;align-items: center;justify-content: center;transition: transform 0.1s;}
 .btn-mic:active { transform: scale(0.95); }
 .btn-mic.escuchando { animation: pulse 1.5s infinite; }
 .btn-mic.handfree { background: var(--ok); }
 @keyframes pulse {0%{box-shadow:0 0 0 0 rgba(198,40,40,0.7)}70%{box-shadow:0 0 0 30px rgba(198,40,40,0)}100%{box-shadow:0 0 0 0 rgba(198,40,40,0)}}
 
-.btn-normal {
-  height: 70px;
-  padding: 0 25px;
-  border-radius: 12px;
-  font-size: 1.3rem;
-  background: var(--card);
-  color: var(--fg);
-  border: 2px solid var(--border);
-  font-weight: bold;
-  cursor: pointer;
-}
-.btn-normal.primary {
-  background: var(--btn);
-  color: var(--btn-fg);
-  border: none;
-}
+.btn-normal {height: 70px;padding: 0 25px;border-radius: 12px;font-size: 1.3rem;background: var(--card);color: var(--fg);border: 2px solid var(--border);font-weight: bold;cursor: pointer;}
+.btn-normal.primary {background: var(--btn);color: var(--btn-fg);border: none;}
 
 .status-area{text-align:center;display:flex;flex-direction:column;align-items:center;gap:10px;margin-bottom:20px;}
 #micStatus{font-size:1.1rem;font-weight:bold;color:var(--btn);min-height:1.5em;}
 .switch-label{display:flex;align-items:center;gap:8px;font-size:1.1rem;font-weight:bold;cursor:pointer;background:var(--card);padding:10px 20px;border-radius:20px;border:1px solid var(--border)}
 .switch-label input{width:24px;height:24px;cursor:pointer}
 
+.summary-screen{text-align:center;padding:30px;background:var(--card);border-radius:12px;display:none;}
+.summary-screen h2{font-size:1.5rem;color:var(--ok);margin-bottom:15px;}
+.summary-screen p{font-size:1.1rem;margin-bottom:20px;}
+
 @media (max-width:700px){
   .btn-mic { width: 100px; height: 100px; font-size: 4rem; }
   .btn-normal { height: 60px; font-size: 1rem; padding: 0 15px; }
   .bottom-controls { gap: 10px; }
+  .header-filters{flex-direction:column;}
+  .filter-btn{max-width:100%;}
 }
 </style>
 </head>
 <body>
 <header>
-  <!-- Fila 1: Progreso, aciertos y botones de sistema -->
   <div class="header-row">
     <h1>Test SCS · <span id="prog">0/300</span></h1>
     <div class="stats">✅ <span id="okCount">0</span> · ❌ <span id="koCount">0</span></div>
-    <button id="failedMode">📋 Solo falladas</button>
-    <button id="restart">🔄 Reiniciar</button>
+    <div class="jump-box">
+      <label>Ir a:</label>
+      <input type="number" id="jumpInput" min="1" max="300" value="1">
+      <button id="jumpBtn">Ir</button>
+    </div>
     <button id="btnTheme" title="Tema">🌓</button>
     <button id="btnAudio" title="Voz">🔊</button>
   </div>
-  <!-- Fila 2: Configuración de voz -->
+  
+  <div class="header-filters">
+    <button id="filterAll" class="filter-btn active">📚 Todas</button>
+    <button id="filterFailed" class="filter-btn failed">📋 Falladas</button>
+    <button id="filterDoubt" class="filter-btn doubt">🤔 Dudosas</button>
+    <button id="restart" class="filter-btn">🔄 Reiniciar</button>
+  </div>
+
   <div class="header-config">
     <label>Voz: <select id="voiceSelect"></select></label>
     <label>Vel: <input type="range" id="rateSlider" min="0.5" max="1.5" step="0.1" value="0.95"> <span id="rateValue">0.95x</span></label>
@@ -120,22 +112,29 @@ main{padding:15px;max-width:900px;margin:0 auto;display:flex;flex-direction:colu
 </header>
 
 <main>
-  <div class="pregunta">
-    <div class="num" id="num">Cargando…</div>
+  <div class="pregunta" id="questionCard">
+    <div class="question-header">
+      <div class="num" id="num">Cargando…</div>
+      <button id="doubtBtn" class="doubt-btn">🤔 Marcar dudosa</button>
+    </div>
     <div class="enunciado" id="enunciado"></div>
     <div class="opciones" id="opciones"></div>
     <div class="resultado" id="resultado"></div>
   </div>
   
-  <!-- Fila única inferior: Micro y flechas -->
-  <div class="bottom-controls">
+  <div class="summary-screen" id="summaryScreen">
+    <h2>🎉 ¡Has completado esta lista!</h2>
+    <p>Puedes usar los filtros de arriba para repasar las preguntas que has fallado o las que has marcado como dudosas, o pulsar "Reiniciar" para empezar de cero.</p>
+  </div>
+  
+  <div class="bottom-controls" id="controlsArea">
     <button id="micBtn" class="btn-mic" title="Hablar">🎤</button>
     <button id="repeat" class="btn-normal">🔁 Repetir</button>
     <button id="prev" class="btn-normal">◀ Anterior</button>
     <button id="next" class="btn-normal primary">Siguiente ▶</button>
   </div>
 
-  <div class="status-area">
+  <div class="status-area" id="statusArea">
     <div id="micStatus">Pulsa el micro para hablar</div>
     <label class="switch-label">
       <input type="checkbox" id="handsfreeToggle">
@@ -149,8 +148,11 @@ main{padding:15px;max-width:900px;margin:0 auto;display:flex;flex-direction:colu
 (function(){
   'use strict';
   const S_KEY='test_scs_v2';
-  const listState={answers:{}};
-  let currentIdx=0, failedOnly=false, audioOn=true, handsfree=false, listening=false, isSpeaking=false;
+  const listState={answers:{}, doubts:{}};
+  let currentIdx=0;
+  let currentFilter='all'; // 'all', 'failed', 'doubt'
+  let audioOn=true, handsfree=false, listening=false, isSpeaking=false;
+  
   const synth=window.speechSynthesis;
   const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
   let recognition=null;
@@ -161,21 +163,83 @@ main{padding:15px;max-width:900px;margin:0 auto;display:flex;flex-direction:colu
   const rateValue = $('rateValue');
   const handsfreeToggle = $('handsfreeToggle');
   const micBtn = $('micBtn');
-  const failedBtn = $('failedMode');
+  const doubtBtn = $('doubtBtn');
+  
+  const questionCard = $('questionCard');
+  const summaryScreen = $('summaryScreen');
+  const controlsArea = $('controlsArea');
+  const statusArea = $('statusArea');
 
   function loadState(){
-    try{const s=JSON.parse(localStorage.getItem(S_KEY));if(s&&s.answers)Object.assign(listState,s);}catch(e){}
+    try{
+      const s=JSON.parse(localStorage.getItem(S_KEY));
+      if(s){
+        if(s.answers) Object.assign(listState.answers, s.answers);
+        if(s.doubts) Object.assign(listState.doubts, s.doubts);
+      }
+    }catch(e){}
   }
   function saveState(){localStorage.setItem(S_KEY,JSON.stringify(listState));}
   
   function getList(){
-    if(!failedOnly) return PREGUNTAS;
-    return PREGUNTAS.filter(p => {
-      const chosen = listState.answers[p.n];
-      return chosen !== undefined && chosen !== p.a;
-    });
+    if(currentFilter === 'failed') {
+      return PREGUNTAS.filter(p => {
+        const chosen = listState.answers[p.n];
+        return chosen !== undefined && chosen !== p.a;
+      });
+    } else if(currentFilter === 'doubt') {
+      return PREGUNTAS.filter(p => listState.doubts[p.n] === true);
+    }
+    return PREGUNTAS;
   }
 
+  function setFilter(filter) {
+    currentFilter = filter;
+    currentIdx = 0;
+    stopSpeak();
+    stopListening();
+    
+    $('filterAll').classList.toggle('active', filter === 'all');
+    $('filterFailed').classList.toggle('active', filter === 'failed');
+    $('filterDoubt').classList.toggle('active', filter === 'doubt');
+    
+    render();
+  }
+
+  $('filterAll').onclick = () => setFilter('all');
+  $('filterFailed').onclick = () => setFilter('failed');
+  $('filterDoubt').onclick = () => setFilter('doubt');
+  
+  $('jumpBtn').onclick = () => {
+    const targetNum = parseInt($('jumpInput').value, 10);
+    if(isNaN(targetNum) || targetNum < 1 || targetNum > 300) {
+        alert("Por favor, introduce un número entre 1 y 300.");
+        return;
+    }
+    
+    let list = getList();
+    let idx = list.findIndex(p => p.n === targetNum);
+    
+    if(idx === -1) {
+        // No está en la lista actual (ej. buscar una que no has fallado estando en "falladas")
+        alert("Esa pregunta no está en el filtro actual. Cambiando a 'Todas'...");
+        currentFilter = 'all';
+        $('filterAll').classList.add('active');
+        $('filterFailed').classList.remove('active');
+        $('filterDoubt').classList.remove('active');
+        list = PREGUNTAS;
+        idx = list.findIndex(p => p.n === targetNum);
+    }
+    
+    if(idx !== -1) {
+        currentIdx = idx;
+        stopSpeak();
+        stopListening();
+        render();
+    }
+  };
+
+  // Configuración de velocidad y voz
   const savedRate = localStorage.getItem('test_scs_rate');
   if(savedRate) {
     rateSlider.value = savedRate;
@@ -271,21 +335,44 @@ main{padding:15px;max-width:900px;margin:0 auto;display:flex;flex-direction:colu
     const list=getList();
     const numEl=$('num'), enEl=$('enunciado'), opcEl=$('opciones'), resEl=$('resultado');
     
-    if(list.length===0){
-      numEl.textContent=failedOnly ? '🎉 ¡No tienes preguntas falladas!' : 'No hay preguntas para mostrar.';
-      enEl.textContent='';opcEl.innerHTML='';resEl.style.display='none';
-      updateStats();return;
+    // Si la lista está vacía o hemos terminado
+    if(list.length === 0 || currentIdx >= list.length){
+      questionCard.style.display = 'none';
+      controlsArea.style.display = 'none';
+      statusArea.style.display = 'none';
+      summaryScreen.style.display = 'block';
+      
+      if(list.length === 0) {
+          summaryScreen.querySelector('h2').textContent = 'No hay preguntas en este filtro';
+          summaryScreen.querySelector('p').textContent = 'Prueba a cambiar de filtro en el menú superior.';
+      } else {
+          summaryScreen.querySelector('h2').textContent = '🎉 ¡Has completado esta lista!';
+          summaryScreen.querySelector('p').textContent = 'Puedes usar los filtros de arriba para repasar las preguntas falladas o dudosas.';
+      }
+      updateStats();
+      return;
     }
-    if(currentIdx>=list.length)currentIdx=list.length-1;
-    if(currentIdx<0)currentIdx=0;
     
+    // Si hay preguntas, mostrar la interfaz
+    questionCard.style.display = 'block';
+    controlsArea.style.display = 'flex';
+    statusArea.style.display = 'flex';
+    summaryScreen.style.display = 'none';
+
     const p=list[currentIdx];
-    numEl.textContent='Pregunta '+p.n + (failedOnly ? ' (Fallo)' : '');
+    numEl.textContent='Pregunta '+p.n;
+    $('jumpInput').value = p.n;
     enEl.textContent=p.q;
     opcEl.innerHTML='';
     const prev=listState.answers[p.n];
     const letras=['1','2','3','4'];
     
+    // Actualizar botón duda
+    const isDoubt = listState.doubts[p.n] === true;
+    doubtBtn.classList.toggle('active', isDoubt);
+    doubtBtn.innerHTML = isDoubt ? '⭐ Es dudosa' : '🤔 Marcar dudosa';
+    questionCard.classList.toggle('is-doubt', isDoubt);
+
     p.o.forEach((op,i)=>{
       const b=document.createElement('button');
       b.className='opcion';
@@ -320,6 +407,25 @@ main{padding:15px;max-width:900px;margin:0 auto;display:flex;flex-direction:colu
       }, 250);
     }
   }
+
+  doubtBtn.onclick = () => {
+    const list = getList();
+    const p = list[currentIdx];
+    if(!p) return;
+    
+    listState.doubts[p.n] = !listState.doubts[p.n];
+    saveState();
+    
+    const isDoubt = listState.doubts[p.n] === true;
+    doubtBtn.classList.toggle('active', isDoubt);
+    doubtBtn.innerHTML = isDoubt ? '⭐ Es dudosa' : '🤔 Marcar dudosa';
+    questionCard.classList.toggle('is-doubt', isDoubt);
+    
+    if(currentFilter === 'doubt' && !isDoubt) {
+      // Si estamos en la lista de dudosas y la desmarcamos, pasamos a la siguiente
+      // No borramos la vista de inmediato para que el usuario vea que se ha desmarcado
+    }
+  };
 
   function answer(p,choose){
     listState.answers[p.n]=choose;
@@ -357,8 +463,13 @@ main{padding:15px;max-width:900px;margin:0 auto;display:flex;flex-direction:colu
       if(listState.answers[k]===p.a)ok++;else ko++;
     }
     $('okCount').textContent=ok;$('koCount').textContent=ko;
-    const list=getList();const p=list[currentIdx];
-    $('prog').textContent=(p?p.n:0)+'/300';
+    
+    const list=getList();
+    if(list.length > 0 && currentIdx < list.length) {
+        $('prog').textContent=(currentIdx+1)+'/'+list.length;
+    } else {
+        $('prog').textContent='0/'+list.length;
+    }
   }
 
   function initVoice(){
@@ -456,10 +567,11 @@ main{padding:15px;max-width:900px;margin:0 auto;display:flex;flex-direction:colu
       stopListening();
       render();
     }else{
-      speak('Has terminado. Enhorabuena.');
-      handsfreeToggle.checked = false;
-      handsfree = false;
-      updateHandsfreeUI();
+      currentIdx++; // Forzar salida para mostrar el resumen
+      stopSpeak();
+      stopListening();
+      render();
+      speak('Has terminado esta lista.');
     }
   }
 
@@ -479,6 +591,7 @@ main{padding:15px;max-width:900px;margin:0 auto;display:flex;flex-direction:colu
     updateHandsfreeUI();
     if (handsfree) {
       const list = getList();
+      if(list.length === 0 || currentIdx >= list.length) return;
       const p = list[currentIdx];
       if (p) {
         const prev = listState.answers[p.n];
@@ -517,20 +630,13 @@ main{padding:15px;max-width:900px;margin:0 auto;display:flex;flex-direction:colu
     }
   };
 
-  failedBtn.onclick=()=>{
-    failedOnly=!failedOnly;
-    currentIdx=0;
-    stopSpeak();
-    stopListening();
-    failedBtn.textContent=failedOnly?'📚 Ver todas':'📋 Solo falladas';
-    failedBtn.classList.toggle('active', failedOnly);
-    render();
-  };
-  
   $('restart').onclick=()=>{
-    if(confirm('¿Borrar todo el progreso?')){
-      listState.answers={};saveState();
-      currentIdx=0;stopSpeak();stopListening();render();
+    if(confirm('¿Borrar todo el progreso, fallos y dudas marcadas?')){
+      listState.answers={};
+      listState.doubts={};
+      saveState();
+      currentIdx=0;
+      setFilter('all');
     }
   };
   
@@ -548,6 +654,8 @@ main{padding:15px;max-width:900px;margin:0 auto;display:flex;flex-direction:colu
   };
 
   document.addEventListener('keydown',e=>{
+    if(e.target.tagName === 'INPUT') return; // Evitar que interfiera al escribir en el salto
+    
     if(['1','2','3','4'].includes(e.key)){
       const list=getList();const p=list[currentIdx];if(!p)return;
       const btn=document.querySelector('.opcion[data-idx="'+e.key+'"]');
