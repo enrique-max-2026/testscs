@@ -369,13 +369,12 @@ main { display: flex; flex-direction: column; gap: 20px; }
   let audioOn=true, handsfree=true, listening=false;
   let timerInterval = null;
   let timeElapsed = 0;
+  let nextTimeout = null;
   
   const synth=window.speechSynthesis;
   const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
   let recognition=null;
   let selectedVoice=null;
-  
-  let speechId = 0;
   let currentUtterance = null;
 
   const $ = id => document.getElementById(id);
@@ -681,23 +680,15 @@ main { display: flex; flex-direction: column; gap: 20px; }
     synth.speak(u);
   };
 
-  // --- SISTEMA DE VOZ ANTI-BLOQUEO DEFINITIVO ---
+  // --- SISTEMA DE VOZ ROBUSTO ---
   function speak(text, onEnd) {
     if (!audioOn || !synth) { if (onEnd) onEnd(); return; }
     
-    speechId++;
-    const myId = speechId;
+    if (nextTimeout) clearTimeout(nextTimeout);
+    stopSpeak(); 
     
-    if (currentUtterance) {
-        currentUtterance.onend = null;
-        currentUtterance.onerror = null;
-        currentUtterance = null;
-    }
-    synth.cancel();
-    
-    setTimeout(() => {
-        if (myId !== speechId) return; 
-        
+    // Retraso crítico de 60ms para desbloquear el motor tras un cancel() en Chrome
+    nextTimeout = setTimeout(() => {
         currentUtterance = new SpeechSynthesisUtterance(text);
         if (selectedVoice) currentUtterance.voice = selectedVoice;
         currentUtterance.lang = 'es-ES';
@@ -708,10 +699,8 @@ main { display: flex; flex-direction: column; gap: 20px; }
         const done = () => {
             if (finished) return;
             finished = true;
-            if (myId === speechId) {
-                currentUtterance = null;
-                if (onEnd) onEnd();
-            }
+            currentUtterance = null;
+            if (onEnd) onEnd();
         };
 
         currentUtterance.onend = done;
@@ -719,11 +708,10 @@ main { display: flex; flex-direction: column; gap: 20px; }
         
         synth.speak(currentUtterance);
         if (synth.paused) synth.resume();
-    }, 100);
+    }, 60);
   }
 
   function stopSpeak() {
-    speechId++;
     if (currentUtterance) {
         currentUtterance.onend = null;
         currentUtterance.onerror = null;
@@ -735,6 +723,7 @@ main { display: flex; flex-direction: column; gap: 20px; }
   // --- RENDERIZADO ---
   function render(noSpeak = false){
     if (isPaused) return;
+    if (nextTimeout) clearTimeout(nextTimeout);
     
     const numEl=$('num'), enEl=$('enunciado'), opcEl=$('opciones'), resEl=$('resultado');
     
@@ -838,39 +827,35 @@ main { display: flex; flex-direction: column; gap: 20px; }
   function answer(p,choose){
     if (isPaused) return;
     
-    // 1. Guardar respuesta
-    roundAnswers[p.n] = choose; listState.answers[p.n]=choose; saveState();
-    if(currentFilter === 'exam' && choose === p.a) { examScore++; }
-    
-    // 2. Detener audio e hilos anteriores
     stopSpeak();
     stopListening();
+    if (nextTimeout) clearTimeout(nextTimeout);
     
-    // 3. Preparar feedback
+    roundAnswers[p.n] = choose; listState.answers[p.n]=choose; saveState();
+    document.querySelectorAll('.opcion').forEach(b=>{
+      b.disabled=true; const idx=parseInt(b.dataset.idx,10);
+      if(idx===p.a)b.classList.add('correct');
+      if(idx===choose&&choose!==p.a)b.classList.add('wrong');
+    });
+    const resEl=$('resultado');
+    if(currentFilter === 'exam' && choose === p.a) { examScore++; }
+    
     let feedback = choose === p.a ? 'Correcto. ' : 'Incorrecto. La respuesta correcta es la ' + p.a + ': ' + p.o[p.a-1] + '. ';
     
-    // 4. Avanzar índice
-    currentIdx++;
-    
-    if (currentIdx >= currentList.length) {
-        render(true); // Actualiza pantalla final sin hablar
-        speak(feedback + ' Has terminado esta ronda.');
-        return;
+    if(choose===p.a){
+      resEl.textContent='✅ Correcto';resEl.className='resultado ok';
+    }else{
+      resEl.textContent='❌ Incorrecto. La correcta es la opción '+p.a;resEl.className='resultado ko';
     }
     
-    // 5. Actualizar la interfaz INMEDIATAMENTE
-    render(true); 
-    
-    // 6. Leer en voz alta
-    const nextP = currentList[currentIdx];
-    let nextText = 'Siguiente pregunta. ' + nextP.q + '. ';
-    nextP.o.forEach((op, i) => { nextText += (i + 1) + ': ' + op + '. '; });
-    
-    speak(feedback + nextText, () => {
-        if (handsfree && !isPaused) setTimeout(() => startListening(), 1000);
-    });
-    
+    resetBtn.style.display = 'inline-block'; 
     updateStats();
+    
+    speak(feedback, () => {
+        nextTimeout = setTimeout(() => {
+            nextQuestion();
+        }, 1500);
+    });
   }
 
   function updateStats(){
@@ -976,6 +961,7 @@ main { display: flex; flex-direction: column; gap: 20px; }
   }
 
   function nextQuestion() {
+    if (nextTimeout) clearTimeout(nextTimeout);
     if(currentIdx < currentList.length - 1){
       currentIdx++; 
       stopListening(); 
