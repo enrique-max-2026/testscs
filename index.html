@@ -369,9 +369,7 @@ main { display: flex; flex-direction: column; gap: 20px; }
   let audioOn=true, handsfree=true, listening=false, isSpeaking=false;
   let timerInterval = null;
   let timeElapsed = 0;
-  let speechId = 0;
-  let nextTimeout = null;
-
+  
   const synth=window.speechSynthesis;
   const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
   let recognition=null;
@@ -680,15 +678,14 @@ main { display: flex; flex-direction: column; gap: 20px; }
     synth.speak(u);
   };
 
-  // --- NUEVO SISTEMA DE VOZ ANTI-BLOQUEO ---
+  // --- SISTEMA DE VOZ SÍNCRONO (ANTI-BLOQUEO) ---
   function speak(text, onEnd) {
     if (!audioOn || !synth) { if (onEnd) onEnd(); return; }
     
-    speechId++;
-    const currentId = speechId;
-    
-    synth.cancel(); 
-    isSpeaking = true;
+    // Limpiamos cualquier audio previo
+    if (synth.speaking || synth.pending) {
+        synth.cancel();
+    }
 
     const u = new SpeechSynthesisUtterance(text);
     if (selectedVoice) u.voice = selectedVoice;
@@ -697,41 +694,27 @@ main { display: flex; flex-direction: column; gap: 20px; }
     u.rate = parseFloat(rateSlider.value);
 
     let finished = false;
-    let timeoutId;
-    
     const done = () => {
         if (finished) return;
         finished = true;
-        clearTimeout(timeoutId);
-        if (currentId === speechId) {
-            isSpeaking = false;
-            if (onEnd) onEnd();
-        }
+        if (onEnd) onEnd();
     };
 
-    timeoutId = setTimeout(done, text.length * 80 + 2000);
     u.onend = done;
     u.onerror = done;
-
-    setTimeout(() => {
-        if (currentId === speechId) {
-            synth.speak(u);
-            synth.resume(); // Forzar reanudación en navegadores lentos
-        }
-    }, 150);
+    
+    synth.speak(u);
+    if (synth.paused) synth.resume();
   }
 
   function stopSpeak() {
-    speechId++;
     if (synth) synth.cancel();
     isSpeaking = false;
-    if (nextTimeout) clearTimeout(nextTimeout);
   }
 
   // --- RENDERIZADO ---
   function render(){
     if (isPaused) return;
-    if (nextTimeout) clearTimeout(nextTimeout);
     
     const numEl=$('num'), enEl=$('enunciado'), opcEl=$('opciones'), resEl=$('resultado');
     
@@ -846,15 +829,13 @@ main { display: flex; flex-direction: column; gap: 20px; }
     
     if(choose===p.a){
       resEl.textContent='✅ Correcto';resEl.className='resultado ok';
-      speak('Correcto.', () => { 
-          if (nextTimeout) clearTimeout(nextTimeout);
-          nextTimeout = setTimeout(() => nextQuestion(), 1000); 
+      speak('Correcto. Pasando a la siguiente.', () => { 
+          nextQuestion(); 
       });
     }else{
       resEl.textContent='❌ Incorrecto. La correcta es la opción '+p.a;resEl.className='resultado ko';
-      speak('Incorrecto. La respuesta correcta es la ' + p.a + ': ' + p.o[p.a-1], () => { 
-          if (nextTimeout) clearTimeout(nextTimeout);
-          nextTimeout = setTimeout(() => nextQuestion(), 1500); 
+      speak('Incorrecto. La respuesta correcta es la ' + p.a + ': ' + p.o[p.a-1] + '. ', () => { 
+          nextQuestion(); 
       });
     }
     
@@ -965,7 +946,6 @@ main { display: flex; flex-direction: column; gap: 20px; }
   }
 
   function nextQuestion() {
-    if (nextTimeout) clearTimeout(nextTimeout);
     if(currentIdx < currentList.length - 1){
       currentIdx++; 
       stopListening(); 
@@ -1030,13 +1010,11 @@ main { display: flex; flex-direction: column; gap: 20px; }
   if(synth) { synth.onvoiceschanged = cargarVoces; }
   initVoice(); 
 
-  // DESBLOQUEO DE AUDIO AL INICIAR
   $('startVoiceBtn').onclick = () => {
       handsfree = true;
       updateMicUI();
       $('startModal').style.display = 'none';
       
-      // Desbloqueo Síncrono
       if (synth) {
           const dummy = new SpeechSynthesisUtterance(" ");
           if (selectedVoice) dummy.voice = selectedVoice;
@@ -1052,7 +1030,6 @@ main { display: flex; flex-direction: column; gap: 20px; }
       updateMicUI();
       $('startModal').style.display = 'none';
       
-      // Desbloqueo Síncrono
       if (synth) {
           const dummy = new SpeechSynthesisUtterance(" ");
           if (selectedVoice) dummy.voice = selectedVoice;
