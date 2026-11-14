@@ -223,6 +223,9 @@ main { display: flex; flex-direction: column; gap: 20px; }
                     <svg class="icon" viewBox="0 0 24 24"><path d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
                     <span id="timerText">00:00</span>
                 </div>
+                <button id="btnPause" class="btn-icon" title="Pausar Simulacro" style="display:none; color: var(--warning);">
+                    <svg class="icon" viewBox="0 0 24 24"><path d="M10 9v6m4-6v6m7-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                </button>
                 <div class="jump-box">
                     <span>Ir a:</span>
                     <input type="number" id="jumpInput" min="1" max="300" value="1">
@@ -337,6 +340,15 @@ main { display: flex; flex-direction: column; gap: 20px; }
     </div>
 </div>
 
+<!-- MODAL PAUSA -->
+<div class="modal-overlay" id="pauseOverlay">
+    <div class="modal-box" style="text-align: center;">
+        <h2 style="color: var(--warning);">Simulacro en Pausa</h2>
+        <p>El cronómetro y las preguntas están detenidos.</p>
+        <button id="btnResume" class="btn-repasar" style="margin-top: 15px;">Reanudar Simulacro</button>
+    </div>
+</div>
+
 <script src="preguntas.js"></script>
 <script>
 (function(){
@@ -352,11 +364,15 @@ main { display: flex; flex-direction: column; gap: 20px; }
   let roundAnswers = {};
   let examScore = 0;
   let examUseTimer = false;
+  let isPaused = false;
   
   let audioOn=true, handsfree=true, listening=false, isSpeaking=false;
   let timerInterval = null;
   let timeElapsed = 0;
   
+  let currentUtterance = null;
+  let speakTimeout = null;
+
   const synth=window.speechSynthesis;
   const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
   let recognition=null;
@@ -438,6 +454,9 @@ main { display: flex; flex-direction: column; gap: 20px; }
     currentList = getFilteredQuestions();
     currentIdx = 0;
     stopTimer();
+    $('btnPause').style.display = 'none';
+    isPaused = false;
+    $('pauseOverlay').style.display = 'none';
     render();
   }
 
@@ -451,6 +470,9 @@ main { display: flex; flex-direction: column; gap: 20px; }
     $('filterFailed').classList.toggle('active', filter === 'failed');
     $('filterDoubt').classList.toggle('active', filter === 'doubt');
     $('filterExam').classList.remove('active');
+    $('btnPause').style.display = 'none';
+    isPaused = false;
+    $('pauseOverlay').style.display = 'none';
     
     startNewRound();
   }
@@ -496,7 +518,6 @@ main { display: flex; flex-direction: column; gap: 20px; }
         return !(isCorrect && !isDoubt);
     });
 
-    // Priorizar: 1. Dudosas, 2. Falladas, 3. No vistas
     const doubtfulPool = unapproved.filter(p => listState.doubts[p.n] === true);
     const failedPool = unapproved.filter(p => !listState.doubts[p.n] && listState.answers[p.n] !== undefined);
     const unseenPool = unapproved.filter(p => !listState.doubts[p.n] && listState.answers[p.n] === undefined);
@@ -516,6 +537,12 @@ main { display: flex; flex-direction: column; gap: 20px; }
     $('filterDoubt').classList.remove('active');
     $('filterExam').classList.add('active');
     
+    $('btnPause').style.display = 'flex';
+    $('btnPause').innerHTML = '<svg class="icon" viewBox="0 0 24 24"><path d="M10 9v6m4-6v6m7-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>';
+    $('btnPause').title = "Pausar Simulacro";
+    isPaused = false;
+    $('pauseOverlay').style.display = 'none';
+    
     stopSpeak();
     stopListening();
     
@@ -524,12 +551,37 @@ main { display: flex; flex-direction: column; gap: 20px; }
     render();
   }
 
+  $('btnPause').onclick = () => {
+    if (currentFilter !== 'exam') return;
+    isPaused = !isPaused;
+    if (isPaused) {
+        stopSpeak();
+        stopListening();
+        $('btnPause').innerHTML = '<svg class="icon" viewBox="0 0 24 24"><path d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" /><path d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>';
+        $('btnPause').title = "Reanudar Simulacro";
+        $('pauseOverlay').style.display = 'flex';
+    } else {
+        $('btnPause').innerHTML = '<svg class="icon" viewBox="0 0 24 24"><path d="M10 9v6m4-6v6m7-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>';
+        $('btnPause').title = "Pausar Simulacro";
+        $('pauseOverlay').style.display = 'none';
+        if (examUseTimer) startTimer(false);
+        if (handsfree && currentIdx < currentList.length && !roundAnswers[currentList[currentIdx].n]) {
+            startListening();
+        }
+    }
+  };
+
+  $('btnResume').onclick = () => {
+    $('btnPause').click();
+  };
+
   $('btnRepeatRound').onclick = () => {
     if(currentFilter === 'exam') { $('examModal').style.display = 'flex'; } 
     else { startNewRound(); }
   };
 
   $('jumpBtn').onclick = () => {
+    if (isPaused) return;
     const targetNum = parseInt($('jumpInput').value, 10);
     if(isNaN(targetNum) || targetNum < 1 || targetNum > 300) { return; }
     let idx = currentList.findIndex(p => p.n === targetNum);
@@ -546,16 +598,20 @@ main { display: flex; flex-direction: column; gap: 20px; }
   };
 
   // --- TEMPORIZADOR ---
-  function startTimer() {
+  function startTimer(reset = true) {
     stopTimer();
-    timeElapsed = 0;
+    if (reset) timeElapsed = 0;
     timerDisplay.style.display = 'flex';
-    timerText.textContent = '00:00';
+    const mins = String(Math.floor(timeElapsed / 60)).padStart(2, '0');
+    const secs = String(timeElapsed % 60).padStart(2, '0');
+    timerText.textContent = `${mins}:${secs}`;
+    
     timerInterval = setInterval(() => {
+        if (isPaused) return;
         timeElapsed++;
-        const mins = String(Math.floor(timeElapsed / 60)).padStart(2, '0');
-        const secs = String(timeElapsed % 60).padStart(2, '0');
-        timerText.textContent = `${mins}:${secs}`;
+        const m = String(Math.floor(timeElapsed / 60)).padStart(2, '0');
+        const s = String(timeElapsed % 60).padStart(2, '0');
+        timerText.textContent = `${m}:${s}`;
     }, 1000);
   }
   function stopTimer() {
@@ -627,29 +683,53 @@ main { display: flex; flex-direction: column; gap: 20px; }
 
   function speak(text, onEnd) {
     if(!audioOn || !synth) { if(onEnd) onEnd(); return; }
-    synth.cancel(); isSpeaking = true;
-    const u=new SpeechSynthesisUtterance(text);
+    
+    if (speakTimeout) clearTimeout(speakTimeout);
+    
+    currentUtterance = null;
+    synth.cancel();
+    isSpeaking = true;
+    
+    const u = new SpeechSynthesisUtterance(text);
+    currentUtterance = u;
+    
     if(selectedVoice) u.voice = selectedVoice;
-    u.lang='es-ES'; u.pitch=0.8; u.rate=parseFloat(rateSlider.value);
+    u.lang = 'es-ES';
+    u.pitch = 0.8;
+    u.rate = parseFloat(rateSlider.value);
     
     let finished = false;
     const done = () => {
         if(finished) return;
         finished = true;
+        if (currentUtterance === u) currentUtterance = null;
         clearTimeout(timeoutId);
         isSpeaking = false;
         if(onEnd) onEnd();
     };
-
+    
     const timeoutId = setTimeout(done, text.length * 100 + 3000);
+    
     u.onend = done;
     u.onerror = done;
-    synth.speak(u);
+    
+    speakTimeout = setTimeout(() => {
+        if (isSpeaking && currentUtterance === u) {
+            synth.speak(u);
+        }
+    }, 100);
   }
-  function stopSpeak(){ if(synth){ synth.cancel(); isSpeaking = false; } }
+  
+  function stopSpeak(){ 
+    currentUtterance = null;
+    if(synth){ synth.cancel(); isSpeaking = false; }
+    if (speakTimeout) { clearTimeout(speakTimeout); speakTimeout = null; }
+  }
 
   // --- RENDERIZADO ---
   function render(){
+    if (isPaused) return;
+    
     const numEl=$('num'), enEl=$('enunciado'), opcEl=$('opciones'), resEl=$('resultado');
     
     if(currentList.length === 0 || currentIdx >= currentList.length){
@@ -657,6 +737,7 @@ main { display: flex; flex-direction: column; gap: 20px; }
       controlsArea.style.display = 'none';
       statusArea.style.display = 'none';
       summaryScreen.style.display = 'flex';
+      $('btnPause').style.display = 'none';
       
       if(currentList.length === 0) {
           $('summaryTitle').textContent = 'Todo limpio';
@@ -725,13 +806,13 @@ main { display: flex; flex-direction: column; gap: 20px; }
         let t='Pregunta '+p.n+'. '+p.q+'. ';
         p.o.forEach((op,i)=>{t+=(i+1)+': '+op+'. ';}); 
         speak(t, () => { if(handsfree) setTimeout(() => startListening(), 2000); });
-      }, 250);
+      }, 150);
     }
   }
 
   // --- ACCIONES ---
   resetBtn.onclick = () => {
-    if(currentList.length === 0 || currentIdx >= currentList.length) return;
+    if(currentList.length === 0 || currentIdx >= currentList.length || isPaused) return;
     const p = currentList[currentIdx];
     if(confirm('¿Quieres volver a contestar esta pregunta?')){
         delete roundAnswers[p.n]; delete listState.answers[p.n];
@@ -740,7 +821,7 @@ main { display: flex; flex-direction: column; gap: 20px; }
   };
 
   doubtBtn.onclick = () => {
-    if(currentList.length === 0 || currentIdx >= currentList.length) return;
+    if(currentList.length === 0 || currentIdx >= currentList.length || isPaused) return;
     const p = currentList[currentIdx];
     listState.doubts[p.n] = !listState.doubts[p.n]; saveState();
     const isDoubt = listState.doubts[p.n] === true;
@@ -751,6 +832,8 @@ main { display: flex; flex-direction: column; gap: 20px; }
   };
 
   function answer(p,choose){
+    if (isPaused) return;
+    
     roundAnswers[p.n] = choose; listState.answers[p.n]=choose; saveState();
     document.querySelectorAll('.opcion').forEach(b=>{
       b.disabled=true; const idx=parseInt(b.dataset.idx,10);
@@ -765,7 +848,7 @@ main { display: flex; flex-direction: column; gap: 20px; }
       speak('Correcto.', () => { setTimeout(() => nextQuestion(), 1000); });
     }else{
       resEl.textContent='❌ Incorrecto. La correcta es la opción '+p.a;resEl.className='resultado ko';
-      speak('Incorrecto. La respuesta correcta es la ' + p.a + ': ' + p.o[p.a-1], () => { setTimeout(() => nextQuestion(), 1500); });
+      speak('Incorrecto. La respuesta correcta es la ' + p.a + ': ' + p.o[p.a-1], () => { setTimeout(() => nextQuestion(), 1000); });
     }
     
     resetBtn.style.display = 'inline-block'; 
@@ -809,14 +892,14 @@ main { display: flex; flex-direction: column; gap: 20px; }
     };
     recognition.onend=()=>{
       listening=false; micBtn.classList.remove('escuchando');
-      if(handsfree && !isSpeaking && currentIdx < currentList.length) {
+      if(handsfree && !isSpeaking && currentIdx < currentList.length && !isPaused) {
           if(!roundAnswers[currentList[currentIdx].n]) { setTimeout(() => startListening(), 1000); }
       } else if(!handsfree) { $('micStatus').textContent='Modo manual activo (toca la opción)'; }
     };
   }
 
   function startListening(){
-    if(!recognition || listening) return;
+    if(!recognition || listening || isPaused) return;
     try{ recognition.start(); listening=true; micBtn.classList.add('escuchando'); $('micStatus').textContent='Escuchando… Di la opción (1 a 4)'; }
     catch(e){ listening=false; if(handsfree) setTimeout(startListening, 1500); }
   }
@@ -842,15 +925,14 @@ main { display: flex; flex-direction: column; gap: 20px; }
   micBtn.onclick = () => {
     handsfree = !handsfree;
     updateMicUI();
-    if (handsfree && currentIdx < currentList.length && !roundAnswers[currentList[currentIdx].n]) {
+    if (handsfree && currentIdx < currentList.length && !roundAnswers[currentList[currentIdx].n] && !isPaused) {
         if (!isSpeaking) startListening();
     }
   };
 
   function handleVoiceCommand(text){
-    if(currentIdx >= currentList.length) {
+    if(currentIdx >= currentList.length || isPaused) {
         if(/(todas|volver)/.test(text)){ setFilter('all'); }
-        if(/(repetir|ronda|examen|simulacro)/.test(text)){ $('examModal').style.display = 'flex'; }
         return;
     }
     const p=currentList[currentIdx]; const prev=roundAnswers[p.n];
@@ -877,16 +959,21 @@ main { display: flex; flex-direction: column; gap: 20px; }
 
   function nextQuestion() {
     if(currentIdx < currentList.length - 1){
-      currentIdx++; stopSpeak(); stopListening(); render();
+      currentIdx++; 
+      stopListening(); 
+      render();
     }else{
-      currentIdx++; stopSpeak(); stopListening(); render();
+      currentIdx++; 
+      stopListening(); 
+      render();
       if(currentFilter === 'exam') speak('Simulacro terminado.'); else speak('Has terminado esta ronda.');
     }
   }
 
-  $('prev').onclick=()=>{if(currentIdx>0){currentIdx--;stopSpeak();stopListening();render();}};
-  $('next').onclick=nextQuestion;
+  $('prev').onclick=()=>{if(currentIdx>0 && !isPaused){currentIdx--;stopSpeak();stopListening();render();}};
+  $('next').onclick=()=>{ if(!isPaused) nextQuestion(); };
   $('repeat').onclick=()=>{
+    if(isPaused) return;
     stopSpeak(); if(currentIdx >= currentList.length) return;
     const p=currentList[currentIdx];
     let t='Pregunta '+p.n+'. '+p.q+'. ';
@@ -914,7 +1001,7 @@ main { display: flex; flex-direction: column; gap: 20px; }
   };
 
   document.addEventListener('keydown',e=>{
-    if(e.target.tagName === 'INPUT') return; 
+    if(e.target.tagName === 'INPUT' || isPaused) return; 
     if(['1','2','3','4'].includes(e.key)){
       if(currentIdx >= currentList.length) return;
       const btn=document.querySelector('.opcion[data-idx="'+e.key+'"]');
