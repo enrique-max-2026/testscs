@@ -386,7 +386,7 @@ main { display: flex; flex-direction: column; gap: 20px; }
   
   let currentUtterance = null;
   let speakTimeout = null;
-  let nextQuestionTimeout = null;
+  let autoAdvanceTimeout = null;
 
   const $ = id => document.getElementById(id);
   const rateSlider = $('rateSlider');
@@ -553,7 +553,7 @@ main { display: flex; flex-direction: column; gap: 20px; }
     isPaused = false;
     $('pauseOverlay').style.display = 'none';
     
-    stopSpeak(); // Aseguramos que no haya audios residuales
+    stopSpeak();
     stopListening();
     
     if (examUseTimer) { startTimer(); } else { stopTimer(); }
@@ -691,9 +691,9 @@ main { display: flex; flex-direction: column; gap: 20px; }
     synth.speak(u);
   };
 
-  // --- SISTEMA DE VOZ A PRUEBA DE BLOQUEOS ---
-  function speak(text, onEnd) {
-    if (!audioOn || !synth) { if (onEnd) onEnd(); return; }
+  // --- SISTEMA DE VOZ ROBUSTO (SIN DEPENDER DE onend) ---
+  function speak(text) {
+    if (!audioOn || !synth) return;
     
     if (speakTimeout) clearTimeout(speakTimeout);
     
@@ -710,21 +710,10 @@ main { display: flex; flex-direction: column; gap: 20px; }
         currentUtterance.lang = 'es-ES';
         currentUtterance.pitch = 0.8;
         currentUtterance.rate = parseFloat(rateSlider.value);
-
-        let finished = false;
-        const done = () => {
-            if (finished) return;
-            finished = true;
-            currentUtterance = null;
-            if (onEnd) onEnd();
-        };
-
-        currentUtterance.onend = done;
-        currentUtterance.onerror = done;
         
         synth.speak(currentUtterance);
         if (synth.paused) synth.resume();
-    }, 100); // Delay crítico para no bloquear
+    }, 100); 
   }
 
   function stopSpeak() {
@@ -815,7 +804,12 @@ main { display: flex; flex-direction: column; gap: 20px; }
     if(prev === undefined && !noSpeak){
       let t='Pregunta '+p.n+'. '+p.q+'. ';
       p.o.forEach((op,i)=>{t+=(i+1)+': '+op+'. ';}); 
-      speak(t, () => { if(handsfree && !isPaused) setTimeout(() => startListening(), 2000); });
+      speak(t);
+      
+      // Temporizador para activar el micro tras leer (aprox)
+      if (handsfree && !isPaused) {
+          setTimeout(() => { if (!synth.speaking) startListening(); }, 2000);
+      }
     }
   }
 
@@ -843,18 +837,21 @@ main { display: flex; flex-direction: column; gap: 20px; }
   function answer(p,choose){
     if (isPaused) return;
     
-    // 1. Guardar respuesta
-    roundAnswers[p.n] = choose; listState.answers[p.n]=choose; saveState();
-    if(currentFilter === 'exam' && choose === p.a) { examScore++; }
+    stopSpeak();
+    stopListening();
+    if (autoAdvanceTimeout) clearTimeout(autoAdvanceTimeout);
     
-    // 2. Actualizar visualmente la pregunta actual (verde/rojo)
+    roundAnswers[p.n] = choose; listState.answers[p.n]=choose; saveState();
     document.querySelectorAll('.opcion').forEach(b=>{
       b.disabled=true; const idx=parseInt(b.dataset.idx,10);
       if(idx===p.a)b.classList.add('correct');
       if(idx===choose&&choose!==p.a)b.classList.add('wrong');
     });
-    
     const resEl=$('resultado');
+    if(currentFilter === 'exam' && choose === p.a) { examScore++; }
+    
+    let feedback = choose === p.a ? 'Correcto.' : 'Incorrecto. La respuesta correcta es la ' + p.a;
+    
     if(choose===p.a){
       resEl.textContent='✅ Correcto';resEl.className='resultado ok';
     }else{
@@ -863,24 +860,19 @@ main { display: flex; flex-direction: column; gap: 20px; }
     resetBtn.style.display = 'inline-block'; 
     updateStats();
     
-    // Detenemos cualquier lectura de la pregunta actual
-    stopSpeak();
-    stopListening();
+    speak(feedback);
     
-    // 3. Avanzar a la siguiente pregunta después de 1.2 segundos
-    if (nextQuestionTimeout) clearTimeout(nextQuestionTimeout);
-    nextQuestionTimeout = setTimeout(() => {
+    // TEMPORIZADOR FIJO DE AVANCE: Avanza en 1.5s sin importar si el audio terminó o falló
+    autoAdvanceTimeout = setTimeout(() => {
         currentIdx++;
-        
         if (currentIdx >= currentList.length) {
-            render(); // Pinta la pantalla final
+            render(); 
             if(currentFilter === 'exam') speak('Simulacro terminado.'); 
             else speak('Has terminado esta ronda.');
         } else {
-            // Render pinta la nueva pregunta y activa el motor de voz
             render();
         }
-    }, 1200); 
+    }, 1500);
   }
 
   function updateStats(){
@@ -986,7 +978,7 @@ main { display: flex; flex-direction: column; gap: 20px; }
   }
 
   function nextQuestion() {
-    if (nextQuestionTimeout) clearTimeout(nextQuestionTimeout);
+    if (autoAdvanceTimeout) clearTimeout(autoAdvanceTimeout);
     if(currentIdx < currentList.length - 1){
       currentIdx++; 
       stopListening(); 
@@ -1007,7 +999,7 @@ main { display: flex; flex-direction: column; gap: 20px; }
     const p=currentList[currentIdx];
     let t='Pregunta '+p.n+'. '+p.q+'. ';
     p.o.forEach((op,i)=>{t+=(i+1)+': '+op+'. ';});
-    speak(t, () => { if(handsfree && !isPaused) setTimeout(() => startListening(), 2000); });
+    speak(t);
   };
 
   $('restart').onclick=()=>{
