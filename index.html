@@ -369,9 +369,8 @@ main { display: flex; flex-direction: column; gap: 20px; }
   let audioOn=true, handsfree=true, listening=false, isSpeaking=false;
   let timerInterval = null;
   let timeElapsed = 0;
-  
-  let currentUtterance = null;
-  let speakTimeout = null;
+  let speechId = 0;
+  let nextTimeout = null;
 
   const synth=window.speechSynthesis;
   const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
@@ -681,54 +680,57 @@ main { display: flex; flex-direction: column; gap: 20px; }
     synth.speak(u);
   };
 
+  // --- NUEVO SISTEMA DE VOZ ANTI-BLOQUEO ---
   function speak(text, onEnd) {
-    if(!audioOn || !synth) { if(onEnd) onEnd(); return; }
+    if (!audioOn || !synth) { if (onEnd) onEnd(); return; }
     
-    if (speakTimeout) clearTimeout(speakTimeout);
+    speechId++;
+    const currentId = speechId;
     
-    currentUtterance = null;
-    synth.cancel();
+    synth.cancel(); 
     isSpeaking = true;
-    
+
     const u = new SpeechSynthesisUtterance(text);
-    currentUtterance = u;
-    
-    if(selectedVoice) u.voice = selectedVoice;
+    if (selectedVoice) u.voice = selectedVoice;
     u.lang = 'es-ES';
     u.pitch = 0.8;
     u.rate = parseFloat(rateSlider.value);
-    
+
     let finished = false;
+    let timeoutId;
+    
     const done = () => {
-        if(finished) return;
+        if (finished) return;
         finished = true;
-        if (currentUtterance === u) currentUtterance = null;
         clearTimeout(timeoutId);
-        isSpeaking = false;
-        if(onEnd) onEnd();
+        if (currentId === speechId) {
+            isSpeaking = false;
+            if (onEnd) onEnd();
+        }
     };
-    
-    const timeoutId = setTimeout(done, text.length * 100 + 3000);
-    
+
+    timeoutId = setTimeout(done, text.length * 100 + 3000);
     u.onend = done;
     u.onerror = done;
-    
-    speakTimeout = setTimeout(() => {
-        if (isSpeaking && currentUtterance === u) {
+
+    setTimeout(() => {
+        if (currentId === speechId) {
             synth.speak(u);
         }
-    }, 100);
+    }, 150);
   }
-  
-  function stopSpeak(){ 
-    currentUtterance = null;
-    if(synth){ synth.cancel(); isSpeaking = false; }
-    if (speakTimeout) { clearTimeout(speakTimeout); speakTimeout = null; }
+
+  function stopSpeak() {
+    speechId++;
+    if (synth) synth.cancel();
+    isSpeaking = false;
+    if (nextTimeout) clearTimeout(nextTimeout);
   }
 
   // --- RENDERIZADO ---
   function render(){
     if (isPaused) return;
+    if (nextTimeout) clearTimeout(nextTimeout);
     
     const numEl=$('num'), enEl=$('enunciado'), opcEl=$('opciones'), resEl=$('resultado');
     
@@ -802,11 +804,9 @@ main { display: flex; flex-direction: column; gap: 20px; }
     updateStats();
     
     if(prev === undefined){
-      setTimeout(()=>{
-        let t='Pregunta '+p.n+'. '+p.q+'. ';
-        p.o.forEach((op,i)=>{t+=(i+1)+': '+op+'. ';}); 
-        speak(t, () => { if(handsfree) setTimeout(() => startListening(), 2000); });
-      }, 150);
+      let t='Pregunta '+p.n+'. '+p.q+'. ';
+      p.o.forEach((op,i)=>{t+=(i+1)+': '+op+'. ';}); 
+      speak(t, () => { if(handsfree && !isPaused) setTimeout(() => startListening(), 2000); });
     }
   }
 
@@ -845,10 +845,16 @@ main { display: flex; flex-direction: column; gap: 20px; }
     
     if(choose===p.a){
       resEl.textContent='✅ Correcto';resEl.className='resultado ok';
-      speak('Correcto.', () => { setTimeout(() => nextQuestion(), 1000); });
+      speak('Correcto.', () => { 
+          if (nextTimeout) clearTimeout(nextTimeout);
+          nextTimeout = setTimeout(() => nextQuestion(), 1000); 
+      });
     }else{
       resEl.textContent='❌ Incorrecto. La correcta es la opción '+p.a;resEl.className='resultado ko';
-      speak('Incorrecto. La respuesta correcta es la ' + p.a + ': ' + p.o[p.a-1], () => { setTimeout(() => nextQuestion(), 1000); });
+      speak('Incorrecto. La respuesta correcta es la ' + p.a + ': ' + p.o[p.a-1], () => { 
+          if (nextTimeout) clearTimeout(nextTimeout);
+          nextTimeout = setTimeout(() => nextQuestion(), 1500); 
+      });
     }
     
     resetBtn.style.display = 'inline-block'; 
@@ -899,7 +905,7 @@ main { display: flex; flex-direction: column; gap: 20px; }
   }
 
   function startListening(){
-    if(!recognition || listening || isPaused) return;
+    if(!recognition || listening || isPaused || isSpeaking) return;
     try{ recognition.start(); listening=true; micBtn.classList.add('escuchando'); $('micStatus').textContent='Escuchando… Di la opción (1 a 4)'; }
     catch(e){ listening=false; if(handsfree) setTimeout(startListening, 1500); }
   }
@@ -958,6 +964,7 @@ main { display: flex; flex-direction: column; gap: 20px; }
   }
 
   function nextQuestion() {
+    if (nextTimeout) clearTimeout(nextTimeout);
     if(currentIdx < currentList.length - 1){
       currentIdx++; 
       stopListening(); 
@@ -978,7 +985,7 @@ main { display: flex; flex-direction: column; gap: 20px; }
     const p=currentList[currentIdx];
     let t='Pregunta '+p.n+'. '+p.q+'. ';
     p.o.forEach((op,i)=>{t+=(i+1)+': '+op+'. ';});
-    speak(t, () => { if(handsfree) setTimeout(() => startListening(), 2000); });
+    speak(t, () => { if(handsfree && !isPaused) setTimeout(() => startListening(), 2000); });
   };
 
   $('restart').onclick=()=>{
