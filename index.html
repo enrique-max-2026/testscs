@@ -71,6 +71,7 @@ header {
 }
 .btn-icon:hover { background: var(--surface-hover); color: var(--text); }
 .btn-icon.danger:hover { background: rgba(239, 68, 68, 0.15); color: var(--error); }
+.btn-icon.muted { color: var(--error); opacity: 0.5; }
 .icon { width: 24px; height: 24px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
 
 .toolbar { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; }
@@ -244,7 +245,8 @@ main { display: flex; flex-direction: column; gap: 20px; }
                     <svg class="icon" viewBox="0 0 24 24"><path d="M21.752 15.002A9.718 9.718 0 0118 15.75c-5.385 0-9.75-4.365-9.75-9.75 0-1.33.266-2.597.748-3.752A9.753 9.753 0 003 11.25C3 16.635 7.365 21 12.75 21a9.753 9.753 0 009.002-5.998z" /></svg>
                 </button>
                 <button id="btnAudio" class="btn-icon" title="Activar/Desactivar voz">
-                    <svg class="icon" viewBox="0 0 24 24"><path d="M19.114 5.636a9 9 0 010 12.728M16.463 8.288a5.25 5.25 0 010 7.424M6.75 8.25l4.72-4.72a.75.75 0 011.28.53v15.88a.75.75 0 01-1.28.53l-4.72-4.72H4.51c-.88 0-1.704-.507-1.938-1.354A9.01 9.01 0 012.25 12c0-.83.112-1.633.322-2.396C2.806 8.756 3.63 8.25 4.51 8.25H6.75z" /></svg>
+                    <svg id="audioIconOn" class="icon" viewBox="0 0 24 24"><path d="M19.114 5.636a9 9 0 010 12.728M16.463 8.288a5.25 5.25 0 010 7.424M6.75 8.25l4.72-4.72a.75.75 0 011.28.53v15.88a.75.75 0 01-1.28.53l-4.72-4.72H4.51c-.88 0-1.704-.507-1.938-1.354A9.01 9.01 0 012.25 12c0-.83.112-1.633.322-2.396C2.806 8.756 3.63 8.25 4.51 8.25H6.75z" /></svg>
+                    <svg id="audioIconOff" class="icon" viewBox="0 0 24 24" style="display:none;"><path d="M17.25 9.75L19.5 12m0 0l2.25 2.25M19.5 12l2.25-2.25M19.5 12l-2.25 2.25m-10.5-6l4.72-4.72a.75.75 0 011.28.53v15.88a.75.75 0 01-1.28.53l-4.72-4.72H4.51c-.88 0-1.704-.507-1.938-1.354A9.01 9.01 0 012.25 12c0-.83.112-1.633.322-2.396C2.806 8.756 3.63 8.25 4.51 8.25H6.75z" /></svg>
                 </button>
                 <button id="restart" class="btn-icon danger" title="Reiniciar todo el progreso de este usuario">
                     <svg class="icon" viewBox="0 0 24 24"><path d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99" /></svg>
@@ -334,9 +336,7 @@ main { display: flex; flex-direction: column; gap: 20px; }
 <div class="modal-overlay" id="examModal">
     <div class="modal-box">
         <h2>Configurar Simulacro</h2>
-        <div class="modal-option">
-            <label><input type="checkbox" id="modalTimer"> Activar Cronómetro</label>
-        </div>
+        <p style="text-align:center; font-size:1rem; margin:0 0 10px 0;">El cronómetro se iniciará automáticamente.</p>
         <div class="modal-option">
             <p style="margin:0 0 5px 0; font-weight:700;">Modo de respuesta:</p>
             <label><input type="radio" name="modalMode" value="voice" checked> Voz (Micrófono automático)</label>
@@ -372,7 +372,6 @@ main { display: flex; flex-direction: column; gap: 20px; }
   let currentFilter='all'; 
   let roundAnswers = {};
   let examScore = 0;
-  let examUseTimer = false;
   let isPaused = false;
   
   let audioOn=true, handsfree=true, listening=false;
@@ -511,7 +510,6 @@ main { display: flex; flex-direction: column; gap: 20px; }
 
   $('modalStartBtn').onclick = () => {
     $('examModal').style.display = 'none';
-    examUseTimer = $('modalTimer').checked;
     const mode = document.querySelector('input[name="modalMode"]:checked').value;
     
     handsfree = (mode === 'voice');
@@ -556,7 +554,8 @@ main { display: flex; flex-direction: column; gap: 20px; }
     stopSpeak();
     stopListening();
     
-    if (examUseTimer) { startTimer(); } else { stopTimer(); }
+    // INICIO AUTOMÁTICO DEL TIMER
+    startTimer(); 
     
     render();
   }
@@ -574,7 +573,7 @@ main { display: flex; flex-direction: column; gap: 20px; }
         $('btnPause').innerHTML = '<svg class="icon" viewBox="0 0 24 24"><path d="M10 9v6m4-6v6m7-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>';
         $('btnPause').title = "Pausar Simulacro";
         $('pauseOverlay').style.display = 'none';
-        if (examUseTimer) startTimer(false);
+        startTimer(false);
         if (handsfree && currentIdx < currentList.length && !roundAnswers[currentList[currentIdx].n]) {
             startListening();
         }
@@ -691,7 +690,7 @@ main { display: flex; flex-direction: column; gap: 20px; }
     synth.speak(u);
   };
 
-  // --- SISTEMA DE VOZ ROBUSTO (SIN DEPENDER DE onend) ---
+  // --- SISTEMA DE VOZ ROBUSTO ---
   function speak(text) {
     if (!audioOn || !synth) return;
     
@@ -747,7 +746,7 @@ main { display: flex; flex-direction: column; gap: 20px; }
           if(currentFilter === 'exam') {
               stopTimer();
               $('summaryTitle').textContent = 'Simulacro Finalizado';
-              $('summaryText').textContent = `Has acertado ${examScore} de ${currentList.length} preguntas${examUseTimer ? ` en ${Math.floor(timeElapsed / 60)} min y ${timeElapsed % 60} seg` : ''}.`;
+              $('summaryText').textContent = `Has acertado ${examScore} de ${currentList.length} preguntas.`;
               $('btnNewExam').style.display = 'block'; $('btnRepeatRound').style.display = 'none';
           } else {
               stopTimer();
@@ -806,7 +805,7 @@ main { display: flex; flex-direction: column; gap: 20px; }
       p.o.forEach((op,i)=>{t+=(i+1)+': '+op+'. ';}); 
       speak(t);
       
-      // Temporizador para activar el micro tras leer (aprox)
+      // Activar micro automáticamente
       if (handsfree && !isPaused) {
           setTimeout(() => { if (!synth.speaking) startListening(); }, 2000);
       }
@@ -837,6 +836,7 @@ main { display: flex; flex-direction: column; gap: 20px; }
   function answer(p,choose){
     if (isPaused) return;
     
+    // 1. Detener audio y avanzar visualmente (Feedback visual instantáneo)
     stopSpeak();
     stopListening();
     if (autoAdvanceTimeout) clearTimeout(autoAdvanceTimeout);
@@ -847,10 +847,9 @@ main { display: flex; flex-direction: column; gap: 20px; }
       if(idx===p.a)b.classList.add('correct');
       if(idx===choose&&choose!==p.a)b.classList.add('wrong');
     });
+    
     const resEl=$('resultado');
     if(currentFilter === 'exam' && choose === p.a) { examScore++; }
-    
-    let feedback = choose === p.a ? 'Correcto.' : 'Incorrecto. La respuesta correcta es la ' + p.a;
     
     if(choose===p.a){
       resEl.textContent='✅ Correcto';resEl.className='resultado ok';
@@ -860,19 +859,32 @@ main { display: flex; flex-direction: column; gap: 20px; }
     resetBtn.style.display = 'inline-block'; 
     updateStats();
     
-    speak(feedback);
+    // 2. Preparar la unificación del audio
+    let feedback = choose === p.a ? 'Correcto. ' : 'Incorrecto. La respuesta correcta es la ' + p.a + ': ' + p.o[p.a-1] + '. ';
     
-    // TEMPORIZADOR FIJO DE AVANCE: Avanza en 1.5s sin importar si el audio terminó o falló
-    autoAdvanceTimeout = setTimeout(() => {
-        currentIdx++;
-        if (currentIdx >= currentList.length) {
-            render(); 
-            if(currentFilter === 'exam') speak('Simulacro terminado.'); 
-            else speak('Has terminado esta ronda.');
-        } else {
-            render();
-        }
-    }, 1500);
+    // 3. Avanzar a la siguiente pregunta y unificar el texto
+    currentIdx++;
+    
+    if (currentIdx >= currentList.length) {
+        render(true); // Pinta la pantalla final sin audio
+        speak(feedback + ' Has terminado esta ronda.');
+        return;
+    }
+    
+    render(true); // Pinta la siguiente pregunta sin audio
+    
+    const nextP = currentList[currentIdx];
+    let nextText = ' Siguiente pregunta. ' + nextP.q + '. ';
+    nextP.o.forEach((op, i) => { nextText += (i + 1) + ': ' + op + '. '; });
+    
+    // Lee la corrección y la siguiente pregunta en un solo bloque de audio
+    speak(feedback + nextText);
+    
+    // Activar el micro tras terminar de leer (estimado por longitud)
+    if (handsfree && !isPaused) {
+        let timeout = ((feedback.length + nextText.length) * 80); 
+        setTimeout(() => { if (!synth.speaking) startListening(); }, timeout);
+    }
   }
 
   function updateStats(){
@@ -1016,9 +1028,19 @@ main { display: flex; flex-direction: column; gap: 20px; }
   };
   
   $('btnAudio').onclick=()=>{
-    audioOn=!audioOn;
-    $('btnAudio').style.opacity = audioOn ? '1' : '0.5';
-    if(!audioOn)stopSpeak();
+    audioOn = !audioOn;
+    if(!audioOn) {
+        stopSpeak();
+        $('audioIconOn').style.display = 'none';
+        $('audioIconOff').style.display = 'block';
+        $('btnAudio').classList.add('muted');
+        $('btnAudio').title = "Activar voz";
+    } else {
+        $('audioIconOn').style.display = 'block';
+        $('audioIconOff').style.display = 'none';
+        $('btnAudio').classList.remove('muted');
+        $('btnAudio').title = "Desactivar voz";
+    }
   };
 
   document.addEventListener('keydown',e=>{
