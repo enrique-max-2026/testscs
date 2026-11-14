@@ -44,13 +44,11 @@ body{
     display:flex; flex-direction:column; align-items:center; min-height:100vh;
 }
 
-/* CONTENEDOR CENTRAL (Evita el ancho infinito) */
 .app-container {
     width: 100%; max-width: 880px; padding: 20px;
     display: flex; flex-direction: column; gap: 20px;
 }
 
-/* CABECERA Y CONTROLES GLOBALES */
 header {
     display: flex; flex-direction: column; gap: 15px;
     background: var(--surface); padding: 15px 20px; border-radius: var(--border-radius);
@@ -74,7 +72,6 @@ header {
 .btn-icon.danger:hover { background: rgba(239, 68, 68, 0.15); color: var(--error); }
 .icon { width: 24px; height: 24px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
 
-/* FILTROS Y CONFIGURACIÓN */
 .toolbar { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; }
 .filter-btn {
     background: var(--bg); border: none; color: var(--text); font-family: var(--font-main);
@@ -107,7 +104,6 @@ input[type="checkbox"] { width: 20px; height: 20px; accent-color: var(--primary)
     border-radius: 8px; cursor: pointer; font-weight: 700; font-family: var(--font-main);
 }
 
-/* PREGUNTA (Superficies sólidas, sin bordes finos) */
 main { display: flex; flex-direction: column; gap: 20px; }
 .card {
     background: var(--surface); border-radius: var(--border-radius); padding: 25px;
@@ -125,7 +121,6 @@ main { display: flex; flex-direction: column; gap: 20px; }
 
 .enunciado { font-size: 1.35rem; font-weight: 700; margin-bottom: 5px; line-height: 1.4; }
 
-/* OPCIONES (Bloques sólidos) */
 .opciones { display: flex; flex-direction: column; gap: 12px; }
 .opcion {
     background: var(--bg); border: none; color: var(--text); text-align: left;
@@ -144,7 +139,6 @@ main { display: flex; flex-direction: column; gap: 20px; }
 .resultado.ok { background: rgba(16, 185, 129, 0.15); color: var(--success); display: block; }
 .resultado.ko { background: rgba(239, 68, 68, 0.15); color: var(--error); display: block; }
 
-/* BOTONERA INFERIOR (Reproductor) */
 .bottom-controls {
     display: flex; justify-content: center; align-items: center; gap: 20px; flex-wrap: wrap;
     margin-top: 10px; margin-bottom: 30px;
@@ -179,7 +173,6 @@ main { display: flex; flex-direction: column; gap: 20px; }
     box-shadow: 0 4px 15px rgba(0,0,0,0.1);
 }
 
-/* PANTALLA RESUMEN */
 .summary-screen { text-align: center; background: var(--surface); padding: 40px 20px; border-radius: var(--border-radius); display: none; flex-direction: column; align-items: center; gap: 20px; }
 .summary-screen h2 { font-size: 1.8rem; color: var(--success); margin: 0; }
 .summary-screen p { font-size: 1.2rem; margin: 0; color: var(--text-muted); }
@@ -189,7 +182,6 @@ main { display: flex; flex-direction: column; gap: 20px; }
 .btn-todas { background: var(--bg); color: var(--text); }
 .btn-exam { background: var(--purple); color: #fff; }
 
-/* CABECERA DEL EXAMEN */
 .timer-display { font-size: 1.2rem; font-weight: 700; color: var(--purple); display: none; padding: 8px 15px; background: rgba(139,92,246,0.1); border-radius: var(--border-radius); align-items: center; gap: 8px; }
 .jump-box { display: flex; align-items: center; gap: 8px; background: var(--bg); padding: 8px 15px; border-radius: var(--border-radius); font-weight: 700; font-size: 0.95rem; }
 .jump-box input { width: 60px; padding: 8px; border-radius: 8px; border: none; background: var(--surface); color: var(--text); text-align: center; font-size: 1rem; font-family: var(--font-main); }
@@ -260,8 +252,8 @@ main { display: flex; flex-direction: column; gap: 20px; }
             </div>
             <div class="config-group">
                 <span>Vel:</span>
-                <input type="range" id="rateSlider" min="0.5" max="1.5" step="0.1" value="0.95">
-                <span id="rateValue">0.95x</span>
+                <input type="range" id="rateSlider" min="0.5" max="1.5" step="0.1" value="1.2">
+                <span id="rateValue">1.2x</span>
             </div>
             <button id="testVoice" class="btn-test-voice">Probar voz</button>
         </div>
@@ -483,9 +475,15 @@ main { display: flex; flex-direction: column; gap: 20px; }
     timerDisplay.style.display = 'none';
   }
 
-  // Configuración de voz
+  // Configuración de voz (Velocidad)
   const savedRate = localStorage.getItem('test_scs_rate');
-  if(savedRate) { rateSlider.value = savedRate; rateValue.textContent = savedRate + 'x'; }
+  if(savedRate) { 
+      rateSlider.value = savedRate; 
+      rateValue.textContent = savedRate + 'x'; 
+  } else {
+      // Por defecto 1.2x
+      localStorage.setItem('test_scs_rate', '1.2');
+  }
   rateSlider.oninput = () => { localStorage.setItem('test_scs_rate', rateSlider.value); rateValue.textContent = rateSlider.value + 'x'; };
 
   function cargarVoces(){
@@ -493,22 +491,43 @@ main { display: flex; flex-direction: column; gap: 20px; }
     const voces = synth.getVoices();
     const selector = $('voiceSelect');
     selector.innerHTML = '';
+    
     const vocesEsp = voces.filter(v => v.lang.startsWith('es'));
-    if(vocesEsp.length === 0) { voces.forEach(v => selector.add(new Option(v.name, v.name))); } 
-    else { vocesEsp.forEach(v => selector.add(new Option(v.name, v.name))); }
+    if(vocesEsp.length === 0) { 
+        voces.forEach(v => selector.add(new Option(v.name, v.name))); 
+    } else { 
+        vocesEsp.forEach(v => selector.add(new Option(v.name, v.name))); 
+    }
 
     const guardada = localStorage.getItem('test_scs_voice');
+    
+    // Lógica de selección de voz por defecto
     if(guardada) {
         for(let i=0; i<selector.options.length; i++){
             if(selector.options[i].value === guardada) { selector.selectedIndex = i; break; }
         }
     } else {
-        const masculinas = ["pablo", "raul", "jorge", "diego", "enrique", "hombre", "male"];
+        // Buscar prioridad 1: Google en español
+        let googleIndex = -1;
         for(let i=0; i<selector.options.length; i++){
-            const nombre = selector.options[i].value.toLowerCase();
-            if(masculinas.some(m => nombre.includes(m))){ selector.selectedIndex = i; break; }
+            if(selector.options[i].value.toLowerCase().includes('google')){
+                googleIndex = i;
+                break;
+            }
+        }
+        
+        if(googleIndex !== -1) {
+            selector.selectedIndex = googleIndex;
+        } else {
+            // Buscar prioridad 2: Voces masculinas del sistema (Pablo, Raúl, Jorge, etc.)
+            const masculinas = ["pablo", "raul", "jorge", "diego", "enrique", "hombre", "male"];
+            for(let i=0; i<selector.options.length; i++){
+                const nombre = selector.options[i].value.toLowerCase();
+                if(masculinas.some(m => nombre.includes(m))){ selector.selectedIndex = i; break; }
+            }
         }
     }
+    
     actualizarVozSeleccionada();
   }
 
