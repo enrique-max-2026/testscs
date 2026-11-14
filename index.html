@@ -386,6 +386,7 @@ main { display: flex; flex-direction: column; gap: 20px; }
   
   let currentUtterance = null;
   let speakTimeout = null;
+  let nextQuestionTimeout = null;
 
   const $ = id => document.getElementById(id);
   const rateSlider = $('rateSlider');
@@ -696,7 +697,6 @@ main { display: flex; flex-direction: column; gap: 20px; }
     
     if (speakTimeout) clearTimeout(speakTimeout);
     
-    // Detenemos la voz actual de forma segura
     if (currentUtterance) {
         currentUtterance.onend = null;
         currentUtterance.onerror = null;
@@ -704,7 +704,6 @@ main { display: flex; flex-direction: column; gap: 20px; }
     }
     synth.cancel();
     
-    // Retardo crítico de 150ms: esto desbloquea el motor de Chrome/Windows
     speakTimeout = setTimeout(() => {
         currentUtterance = new SpeechSynthesisUtterance(text);
         if (selectedVoice) currentUtterance.voice = selectedVoice;
@@ -725,7 +724,7 @@ main { display: flex; flex-direction: column; gap: 20px; }
         
         synth.speak(currentUtterance);
         if (synth.paused) synth.resume();
-    }, 150);
+    }, 100); // Delay crítico para no bloquear
   }
 
   function stopSpeak() {
@@ -848,32 +847,40 @@ main { display: flex; flex-direction: column; gap: 20px; }
     roundAnswers[p.n] = choose; listState.answers[p.n]=choose; saveState();
     if(currentFilter === 'exam' && choose === p.a) { examScore++; }
     
-    // 2. Preparar feedback y avanzar el índice INMEDIATAMENTE
-    let feedback = choose === p.a ? 'Correcto. ' : 'Incorrecto. La respuesta correcta es la ' + p.a + ': ' + p.o[p.a-1] + '. ';
-    currentIdx++;
+    // 2. Actualizar visualmente la pregunta actual (verde/rojo)
+    document.querySelectorAll('.opcion').forEach(b=>{
+      b.disabled=true; const idx=parseInt(b.dataset.idx,10);
+      if(idx===p.a)b.classList.add('correct');
+      if(idx===choose&&choose!==p.a)b.classList.add('wrong');
+    });
     
-    stopListening();
+    const resEl=$('resultado');
+    if(choose===p.a){
+      resEl.textContent='✅ Correcto';resEl.className='resultado ok';
+    }else{
+      resEl.textContent='❌ Incorrecto. La correcta es la opción '+p.a;resEl.className='resultado ko';
+    }
+    resetBtn.style.display = 'inline-block'; 
     updateStats();
     
-    // 3. Actualizar pantalla e iniciar audio
-    if (currentIdx >= currentList.length) {
-        render(true); // Muestra el resumen final sin leer
-        speak(feedback + ' Has terminado esta ronda.');
-        return;
-    }
+    // Detenemos cualquier lectura de la pregunta actual
+    stopSpeak();
+    stopListening();
     
-    // Actualiza la interfaz a la siguiente pregunta instantáneamente
-    render(true); 
-    
-    // Prepara el texto para leer en voz alta
-    const nextP = currentList[currentIdx];
-    let nextText = 'Siguiente pregunta. ' + nextP.q + '. ';
-    nextP.o.forEach((op, i) => { nextText += (i + 1) + ': ' + op + '. '; });
-    
-    // Inicia la lectura en segundo plano
-    speak(feedback + nextText, () => {
-        if (handsfree && !isPaused) setTimeout(() => startListening(), 1000);
-    });
+    // 3. Avanzar a la siguiente pregunta después de 1.2 segundos
+    if (nextQuestionTimeout) clearTimeout(nextQuestionTimeout);
+    nextQuestionTimeout = setTimeout(() => {
+        currentIdx++;
+        
+        if (currentIdx >= currentList.length) {
+            render(); // Pinta la pantalla final
+            if(currentFilter === 'exam') speak('Simulacro terminado.'); 
+            else speak('Has terminado esta ronda.');
+        } else {
+            // Render pinta la nueva pregunta y activa el motor de voz
+            render();
+        }
+    }, 1200); 
   }
 
   function updateStats(){
@@ -979,6 +986,7 @@ main { display: flex; flex-direction: column; gap: 20px; }
   }
 
   function nextQuestion() {
+    if (nextQuestionTimeout) clearTimeout(nextQuestionTimeout);
     if(currentIdx < currentList.length - 1){
       currentIdx++; 
       stopListening(); 
