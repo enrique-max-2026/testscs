@@ -44,10 +44,7 @@ body{
     display:flex; flex-direction:column; align-items:center; min-height:100vh;
 }
 
-.app-container {
-    width: 100%; max-width: 880px; padding: 20px;
-    display: flex; flex-direction: column; gap: 20px;
-}
+.app-container { width: 100%; max-width: 880px; padding: 20px; display: flex; flex-direction: column; gap: 20px; }
 
 header {
     display: flex; flex-direction: column; gap: 15px;
@@ -62,7 +59,11 @@ header {
 .stat-ko { color: var(--error); }
 .stat-approved { color: var(--warning); }
 
-.header-actions { display: flex; gap: 10px; align-items: center; }
+.header-actions { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+.user-selector { display: flex; align-items: center; gap: 5px; background: var(--bg); padding: 5px 10px; border-radius: var(--border-radius); }
+.user-selector select { background: transparent; border: none; color: var(--text); font-weight: 700; font-family: var(--font-main); font-size: 1rem; cursor: pointer; max-width: 120px; }
+.user-selector button { background: var(--primary); color: #fff; border: none; border-radius: 50%; width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; cursor: pointer; font-weight: 700; font-size: 1.2rem; }
+
 .btn-icon {
     background: transparent; border: none; color: var(--text-muted); cursor: pointer;
     padding: 8px; border-radius: 8px; display: flex; align-items: center; justify-content: center;
@@ -98,7 +99,6 @@ select {
     color: var(--text); font-family: var(--font-main); font-size: 0.95rem; max-width: 180px;
 }
 input[type="range"] { width: 100px; accent-color: var(--primary); cursor: pointer; }
-input[type="checkbox"] { width: 20px; height: 20px; accent-color: var(--primary); cursor: pointer; }
 .btn-test-voice {
     background: var(--surface-hover); border: none; color: var(--text); padding: 8px 15px;
     border-radius: 8px; cursor: pointer; font-weight: 700; font-family: var(--font-main);
@@ -139,19 +139,16 @@ main { display: flex; flex-direction: column; gap: 20px; }
 .resultado.ok { background: rgba(16, 185, 129, 0.15); color: var(--success); display: block; }
 .resultado.ko { background: rgba(239, 68, 68, 0.15); color: var(--error); display: block; }
 
-.bottom-controls {
-    display: flex; justify-content: center; align-items: center; gap: 20px; flex-wrap: wrap;
-    margin-top: 10px; margin-bottom: 30px;
-}
+.bottom-controls { display: flex; justify-content: center; align-items: center; gap: 20px; flex-wrap: wrap; margin-top: 10px; margin-bottom: 30px; }
 .btn-mic {
-    width: 110px; height: 110px; border-radius: 50%; background: var(--error);
-    color: white; border: none; cursor: pointer; box-shadow: 0 8px 25px rgba(239,68,68,0.4);
-    display: flex; align-items: center; justify-content: center; transition: transform 0.1s;
+    width: 110px; height: 110px; border-radius: 50%; background: var(--success);
+    color: white; border: none; cursor: pointer; box-shadow: 0 8px 25px rgba(16,185,129,0.4);
+    display: flex; align-items: center; justify-content: center; transition: all 0.3s;
 }
 .btn-mic:active { transform: scale(0.92); }
 .btn-mic.escuchando { animation: pulse 1.5s infinite; }
-.btn-mic.handfree { background: var(--success); box-shadow: 0 8px 25px rgba(16,185,129,0.4); }
-@keyframes pulse {0%{box-shadow:0 0 0 0 rgba(239,68,68,0.7)}70%{box-shadow:0 0 0 25px rgba(239,68,68,0)}100%{box-shadow:0 0 0 0 rgba(239,68,68,0)}}
+.btn-mic.manual { background: var(--text-muted); box-shadow: none; }
+@keyframes pulse {0%{box-shadow:0 0 0 0 rgba(16,185,129,0.7)}70%{box-shadow:0 0 0 25px rgba(16,185,129,0)}100%{box-shadow:0 0 0 0 rgba(16,185,129,0)}}
 .btn-mic svg { width: 45px; height: 45px; }
 
 .btn-normal {
@@ -167,11 +164,6 @@ main { display: flex; flex-direction: column; gap: 20px; }
 
 .status-area { text-align: center; display: flex; flex-direction: column; align-items: center; gap: 15px; margin-bottom: 20px; }
 #micStatus { font-size: 1.1rem; font-weight: 700; color: var(--primary); min-height: 1.5em; }
-.switch-label {
-    display: flex; align-items: center; gap: 10px; font-size: 1.1rem; font-weight: 700;
-    cursor: pointer; background: var(--surface); padding: 12px 24px; border-radius: 30px;
-    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-}
 
 .summary-screen { text-align: center; background: var(--surface); padding: 40px 20px; border-radius: var(--border-radius); display: none; flex-direction: column; align-items: center; gap: 20px; }
 .summary-screen h2 { font-size: 1.8rem; color: var(--success); margin: 0; }
@@ -186,6 +178,15 @@ main { display: flex; flex-direction: column; gap: 20px; }
 .jump-box { display: flex; align-items: center; gap: 8px; background: var(--bg); padding: 8px 15px; border-radius: var(--border-radius); font-weight: 700; font-size: 0.95rem; }
 .jump-box input { width: 60px; padding: 8px; border-radius: 8px; border: none; background: var(--surface); color: var(--text); text-align: center; font-size: 1rem; font-family: var(--font-main); }
 .jump-box button { background: var(--primary); color: #fff; border: none; padding: 8px 12px; border-radius: 8px; cursor: pointer; font-weight: 700; font-family: var(--font-main); }
+
+/* MODAL */
+.modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); display: none; justify-content: center; align-items: center; z-index: 1000; }
+.modal-box { background: var(--surface); padding: 30px; border-radius: var(--border-radius); max-width: 450px; width: 90%; display: flex; flex-direction: column; gap: 20px; box-shadow: 0 10px 40px rgba(0,0,0,0.5); }
+.modal-box h2 { margin: 0; color: var(--primary); text-align: center; font-size: 1.4rem; }
+.modal-option { display: flex; flex-direction: column; gap: 10px; font-size: 1.1rem; background: var(--bg); padding: 15px; border-radius: 8px; }
+.modal-option label { display: flex; align-items: center; gap: 10px; cursor: pointer; font-weight: 700; }
+.modal-actions { display: flex; gap: 15px; justify-content: flex-end; margin-top: 10px; }
+.modal-actions button { padding: 12px 20px; font-size: 1rem; border-radius: 8px; cursor: pointer; border: none; font-weight: 700; font-family: var(--font-main); }
 
 @media (max-width: 700px) {
     .app-container { padding: 10px; }
@@ -214,6 +215,10 @@ main { display: flex; flex-direction: column; gap: 20px; }
             </div>
             
             <div class="header-actions">
+                <div class="user-selector">
+                    <select id="userSelect"></select>
+                    <button id="btnAddUser" title="Añadir nuevo usuario">+</button>
+                </div>
                 <div class="timer-display" id="timerDisplay">
                     <svg class="icon" viewBox="0 0 24 24"><path d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
                     <span id="timerText">00:00</span>
@@ -229,7 +234,7 @@ main { display: flex; flex-direction: column; gap: 20px; }
                 <button id="btnAudio" class="btn-icon" title="Activar/Desactivar voz">
                     <svg class="icon" viewBox="0 0 24 24"><path d="M19.114 5.636a9 9 0 010 12.728M16.463 8.288a5.25 5.25 0 010 7.424M6.75 8.25l4.72-4.72a.75.75 0 011.28.53v15.88a.75.75 0 01-1.28.53l-4.72-4.72H4.51c-.88 0-1.704-.507-1.938-1.354A9.01 9.01 0 012.25 12c0-.83.112-1.633.322-2.396C2.806 8.756 3.63 8.25 4.51 8.25H6.75z" /></svg>
                 </button>
-                <button id="restart" class="btn-icon danger" title="Reiniciar todo el progreso">
+                <button id="restart" class="btn-icon danger" title="Reiniciar todo el progreso de este usuario">
                     <svg class="icon" viewBox="0 0 24 24"><path d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99" /></svg>
                 </button>
             </div>
@@ -240,9 +245,6 @@ main { display: flex; flex-direction: column; gap: 20px; }
             <button id="filterFailed" class="filter-btn failed">Falladas</button>
             <button id="filterDoubt" class="filter-btn doubt">Dudosas</button>
             <button id="filterExam" class="filter-btn exam">Simulacro (50)</button>
-            <label class="filter-btn" style="flex: 0.5; min-width: 100px;">
-                <input type="checkbox" id="timerToggle"> Cronómetro
-            </label>
         </div>
 
         <div class="config-bar">
@@ -284,7 +286,7 @@ main { display: flex; flex-direction: column; gap: 20px; }
         </div>
 
         <div class="bottom-controls" id="controlsArea">
-            <button id="micBtn" class="btn-mic" title="Hablar">
+            <button id="micBtn" class="btn-mic" title="Activar/Desactivar micrófono">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"></path><path d="M19 10v2a7 7 0 0 1-14 0v-2"></path><line x1="12" x2="12" y1="19" y2="22"></line></svg>
             </button>
             <button id="repeat" class="btn-normal">
@@ -299,29 +301,48 @@ main { display: flex; flex-direction: column; gap: 20px; }
         </div>
 
         <div class="status-area" id="statusArea">
-            <div id="micStatus">Pulsa el micrófono para hablar</div>
-            <label class="switch-label">
-                <input type="checkbox" id="handsfreeToggle">
-                Modo manos libres
-            </label>
+            <div id="micStatus">Modo voz activo (escucha automática)</div>
         </div>
     </main>
+</div>
+
+<!-- MODAL SIMULACRO -->
+<div class="modal-overlay" id="examModal">
+    <div class="modal-box">
+        <h2>Configurar Simulacro</h2>
+        <div class="modal-option">
+            <label><input type="checkbox" id="modalTimer"> Activar Cronómetro</label>
+        </div>
+        <div class="modal-option">
+            <p style="margin:0 0 5px 0; font-weight:700;">Modo de respuesta:</p>
+            <label><input type="radio" name="modalMode" value="voice" checked> Voz (Micrófono automático)</label>
+            <label><input type="radio" name="modalMode" value="manual"> Manual (Tocar la opción)</label>
+        </div>
+        <div class="modal-actions">
+            <button id="modalCancelBtn" class="btn-todas">Cancelar</button>
+            <button id="modalStartBtn" class="btn-repasar">Comenzar</button>
+        </div>
+    </div>
 </div>
 
 <script src="preguntas.js"></script>
 <script>
 (function(){
   'use strict';
-  const S_KEY='test_scs_v2';
-  const listState={answers:{}, doubts:{}};
   
+  // --- GESTIÓN DE USUARIOS ---
+  let users = JSON.parse(localStorage.getItem('test_scs_users')) || ['Alumno 1'];
+  let activeUser = localStorage.getItem('test_scs_active_user') || 'Alumno 1';
+  
+  const listState = {answers:{}, doubts:{}};
   let currentList = []; 
   let currentIdx = 0;
   let currentFilter='all'; 
   let roundAnswers = {};
   let examScore = 0;
+  let examUseTimer = false;
   
-  let audioOn=true, handsfree=false, listening=false, isSpeaking=false;
+  let audioOn=true, handsfree=true, listening=false, isSpeaking=false;
   let timerInterval = null;
   let timeElapsed = 0;
   
@@ -333,11 +354,9 @@ main { display: flex; flex-direction: column; gap: 20px; }
   const $ = id => document.getElementById(id);
   const rateSlider = $('rateSlider');
   const rateValue = $('rateValue');
-  const handsfreeToggle = $('handsfreeToggle');
   const micBtn = $('micBtn');
   const doubtBtn = $('doubtBtn');
   const resetBtn = $('resetBtn');
-  const timerToggle = $('timerToggle');
   const timerDisplay = $('timerDisplay');
   const timerText = $('timerText');
   
@@ -346,17 +365,51 @@ main { display: flex; flex-direction: column; gap: 20px; }
   const controlsArea = $('controlsArea');
   const statusArea = $('statusArea');
 
+  // --- CARGA Y GUARDADO DE ESTADO ---
   function loadState(){
     try{
-      const s=JSON.parse(localStorage.getItem(S_KEY));
-      if(s){
-        if(s.answers) Object.assign(listState.answers, s.answers);
-        if(s.doubts) Object.assign(listState.doubts, s.doubts);
-      }
+      const a = JSON.parse(localStorage.getItem('test_scs_v3_'+activeUser+'_answers')) || {};
+      const d = JSON.parse(localStorage.getItem('test_scs_v3_'+activeUser+'_doubts')) || {};
+      listState.answers = a;
+      listState.doubts = d;
     }catch(e){}
   }
-  function saveState(){localStorage.setItem(S_KEY,JSON.stringify(listState));}
-  
+  function saveState(){
+    localStorage.setItem('test_scs_v3_'+activeUser+'_answers', JSON.stringify(listState.answers));
+    localStorage.setItem('test_scs_v3_'+activeUser+'_doubts', JSON.stringify(listState.doubts));
+  }
+
+  function loadUsers() {
+    const select = $('userSelect');
+    select.innerHTML = '';
+    users.forEach(u => select.add(new Option(u, u)));
+    select.value = activeUser;
+  }
+
+  $('userSelect').onchange = (e) => {
+    saveState();
+    activeUser = e.target.value;
+    localStorage.setItem('test_scs_active_user', activeUser);
+    loadState();
+    loadConfig();
+    setFilter('all');
+  };
+
+  $('btnAddUser').onclick = () => {
+    const name = prompt("Introduce el nombre del nuevo usuario:");
+    if (name && !users.includes(name)) {
+        users.push(name);
+        localStorage.setItem('test_scs_users', JSON.stringify(users));
+        activeUser = name;
+        localStorage.setItem('test_scs_active_user', activeUser);
+        loadUsers();
+        loadState();
+        loadConfig();
+        setFilter('all');
+    }
+  };
+
+  // --- LÓGICA DE PREGUNTAS ---
   function getFilteredQuestions() {
     if(currentFilter === 'failed') {
       return PREGUNTAS.filter(p => {
@@ -377,43 +430,6 @@ main { display: flex; flex-direction: column; gap: 20px; }
     render();
   }
 
-  function startSimulacro() {
-    const unapproved = PREGUNTAS.filter(p => {
-        const ans = listState.answers[p.n];
-        const isDoubt = listState.doubts[p.n] === true;
-        const isCorrect = ans === p.a;
-        return !(isCorrect && !isDoubt);
-    });
-
-    if (unapproved.length === 0) {
-        alert("¡Enhorabuena! Ya tienes las 300 preguntas aprobadas.");
-        return;
-    }
-
-    const shuffled = [...unapproved].sort(() => 0.5 - Math.random());
-    currentList = shuffled.slice(0, 50);
-    currentIdx = 0;
-    roundAnswers = {};
-    examScore = 0;
-    
-    currentFilter = 'exam';
-    $('filterAll').classList.remove('active');
-    $('filterFailed').classList.remove('active');
-    $('filterDoubt').classList.remove('active');
-    $('filterExam').classList.add('active');
-    
-    stopSpeak();
-    stopListening();
-    
-    if (timerToggle.checked) {
-        startTimer();
-    } else {
-        stopTimer();
-    }
-    
-    render();
-  }
-
   function setFilter(filter) {
     currentFilter = filter;
     stopSpeak();
@@ -431,19 +447,80 @@ main { display: flex; flex-direction: column; gap: 20px; }
   $('filterAll').onclick = () => setFilter('all');
   $('filterFailed').onclick = () => setFilter('failed');
   $('filterDoubt').onclick = () => setFilter('doubt');
-  $('filterExam').onclick = startSimulacro;
-  $('btnNewExam').onclick = startSimulacro;
   $('btnGoAll').onclick = () => setFilter('all');
   
+  $('filterExam').onclick = () => {
+    const unapproved = PREGUNTAS.filter(p => {
+        const ans = listState.answers[p.n];
+        const isDoubt = listState.doubts[p.n] === true;
+        const isCorrect = ans === p.a;
+        return !(isCorrect && !isDoubt);
+    });
+    if (unapproved.length === 0) {
+        alert("¡Enhorabuena! Ya tienes las 300 preguntas aprobadas.");
+        return;
+    }
+    $('examModal').style.display = 'flex';
+  };
+
+  $('modalCancelBtn').onclick = () => { $('examModal').style.display = 'none'; };
+  $('btnNewExam').onclick = () => { $('examModal').style.display = 'flex'; };
+
+  $('modalStartBtn').onclick = () => {
+    $('examModal').style.display = 'none';
+    examUseTimer = $('modalTimer').checked;
+    const mode = document.querySelector('input[name="modalMode"]:checked').value;
+    
+    handsfree = (mode === 'voice');
+    updateMicUI();
+    
+    startSimulacro();
+  };
+
+  function startSimulacro() {
+    const unapproved = PREGUNTAS.filter(p => {
+        const ans = listState.answers[p.n];
+        const isDoubt = listState.doubts[p.n] === true;
+        const isCorrect = ans === p.a;
+        return !(isCorrect && !isDoubt);
+    });
+
+    // Priorizar: 1. Dudosas, 2. Falladas, 3. No vistas
+    const doubtfulPool = unapproved.filter(p => listState.doubts[p.n] === true);
+    const failedPool = unapproved.filter(p => !listState.doubts[p.n] && listState.answers[p.n] !== undefined);
+    const unseenPool = unapproved.filter(p => !listState.doubts[p.n] && listState.answers[p.n] === undefined);
+
+    const shuffledDoubt = [...doubtfulPool].sort(() => 0.5 - Math.random());
+    const shuffledFailed = [...failedPool].sort(() => 0.5 - Math.random());
+    const shuffledUnseen = [...unseenPool].sort(() => 0.5 - Math.random());
+
+    currentList = [...shuffledDoubt, ...shuffledFailed, ...shuffledUnseen].slice(0, 50);
+    currentIdx = 0;
+    roundAnswers = {};
+    examScore = 0;
+    
+    currentFilter = 'exam';
+    $('filterAll').classList.remove('active');
+    $('filterFailed').classList.remove('active');
+    $('filterDoubt').classList.remove('active');
+    $('filterExam').classList.add('active');
+    
+    stopSpeak();
+    stopListening();
+    
+    if (examUseTimer) { startTimer(); } else { stopTimer(); }
+    
+    render();
+  }
+
   $('btnRepeatRound').onclick = () => {
-    if(currentFilter === 'exam') { startSimulacro(); } 
+    if(currentFilter === 'exam') { $('examModal').style.display = 'flex'; } 
     else { startNewRound(); }
   };
 
   $('jumpBtn').onclick = () => {
     const targetNum = parseInt($('jumpInput').value, 10);
     if(isNaN(targetNum) || targetNum < 1 || targetNum > 300) { return; }
-    
     let idx = currentList.findIndex(p => p.n === targetNum);
     if(idx === -1) {
         if(currentFilter !== 'all') {
@@ -457,7 +534,7 @@ main { display: flex; flex-direction: column; gap: 20px; }
     }
   };
 
-  // Funciones del Cronómetro
+  // --- TEMPORIZADOR ---
   function startTimer() {
     stopTimer();
     timeElapsed = 0;
@@ -475,16 +552,18 @@ main { display: flex; flex-direction: column; gap: 20px; }
     timerDisplay.style.display = 'none';
   }
 
-  // Configuración de voz (Velocidad)
-  const savedRate = localStorage.getItem('test_scs_rate');
-  if(savedRate) { 
-      rateSlider.value = savedRate; 
-      rateValue.textContent = savedRate + 'x'; 
-  } else {
-      // Por defecto 1.2x
-      localStorage.setItem('test_scs_rate', '1.2');
+  // --- CONFIGURACIÓN DE VOZ ---
+  function loadConfig() {
+    const r = localStorage.getItem('test_scs_v3_'+activeUser+'_rate') || '1.2';
+    rateSlider.value = r;
+    rateValue.textContent = r + 'x';
+    if (synth) cargarVoces();
   }
-  rateSlider.oninput = () => { localStorage.setItem('test_scs_rate', rateSlider.value); rateValue.textContent = rateSlider.value + 'x'; };
+
+  rateSlider.oninput = () => { 
+      localStorage.setItem('test_scs_v3_'+activeUser+'_rate', rateSlider.value); 
+      rateValue.textContent = rateSlider.value + 'x'; 
+  };
 
   function cargarVoces(){
     if(!synth)return;
@@ -493,33 +572,22 @@ main { display: flex; flex-direction: column; gap: 20px; }
     selector.innerHTML = '';
     
     const vocesEsp = voces.filter(v => v.lang.startsWith('es'));
-    if(vocesEsp.length === 0) { 
-        voces.forEach(v => selector.add(new Option(v.name, v.name))); 
-    } else { 
-        vocesEsp.forEach(v => selector.add(new Option(v.name, v.name))); 
-    }
+    if(vocesEsp.length === 0) { voces.forEach(v => selector.add(new Option(v.name, v.name))); } 
+    else { vocesEsp.forEach(v => selector.add(new Option(v.name, v.name))); }
 
-    const guardada = localStorage.getItem('test_scs_voice');
+    const guardada = localStorage.getItem('test_scs_v3_'+activeUser+'_voice');
     
-    // Lógica de selección de voz por defecto
     if(guardada) {
         for(let i=0; i<selector.options.length; i++){
             if(selector.options[i].value === guardada) { selector.selectedIndex = i; break; }
         }
     } else {
-        // Buscar prioridad 1: Google en español
         let googleIndex = -1;
         for(let i=0; i<selector.options.length; i++){
-            if(selector.options[i].value.toLowerCase().includes('google')){
-                googleIndex = i;
-                break;
-            }
+            if(selector.options[i].value.toLowerCase().includes('google')){ googleIndex = i; break; }
         }
-        
-        if(googleIndex !== -1) {
-            selector.selectedIndex = googleIndex;
-        } else {
-            // Buscar prioridad 2: Voces masculinas del sistema (Pablo, Raúl, Jorge, etc.)
+        if(googleIndex !== -1) { selector.selectedIndex = googleIndex; } 
+        else {
             const masculinas = ["pablo", "raul", "jorge", "diego", "enrique", "hombre", "male"];
             for(let i=0; i<selector.options.length; i++){
                 const nombre = selector.options[i].value.toLowerCase();
@@ -527,7 +595,6 @@ main { display: flex; flex-direction: column; gap: 20px; }
             }
         }
     }
-    
     actualizarVozSeleccionada();
   }
 
@@ -535,7 +602,7 @@ main { display: flex; flex-direction: column; gap: 20px; }
     const nombre = $('voiceSelect').value;
     const voces = synth.getVoices();
     selectedVoice = voces.find(v => v.name === nombre);
-    localStorage.setItem('test_scs_voice', nombre);
+    localStorage.setItem('test_scs_v3_'+activeUser+'_voice', nombre);
   }
   $('voiceSelect').onchange = actualizarVozSeleccionada;
 
@@ -560,15 +627,7 @@ main { display: flex; flex-direction: column; gap: 20px; }
   }
   function stopSpeak(){ if(synth){ synth.cancel(); isSpeaking = false; } }
 
-  function checkLoad(){
-    if(typeof PREGUNTAS==='undefined' || !Array.isArray(PREGUNTAS) || PREGUNTAS.length===0){
-      $('num').textContent='ERROR: no se ha cargado preguntas.js correctamente.';
-      $('enunciado').textContent='Asegúrate de que el archivo existe y no tiene errores de sintaxis.';
-      return false;
-    }
-    return true;
-  }
-
+  // --- RENDERIZADO ---
   function render(){
     const numEl=$('num'), enEl=$('enunciado'), opcEl=$('opciones'), resEl=$('resultado');
     
@@ -586,7 +645,7 @@ main { display: flex; flex-direction: column; gap: 20px; }
           if(currentFilter === 'exam') {
               stopTimer();
               $('summaryTitle').textContent = 'Simulacro Finalizado';
-              $('summaryText').textContent = `Has acertado ${examScore} de ${currentList.length} preguntas${timerToggle.checked ? ` en ${Math.floor(timeElapsed / 60)} min y ${timeElapsed % 60} seg` : ''}.`;
+              $('summaryText').textContent = `Has acertado ${examScore} de ${currentList.length} preguntas${examUseTimer ? ` en ${Math.floor(timeElapsed / 60)} min y ${timeElapsed % 60} seg` : ''}.`;
               $('btnNewExam').style.display = 'block'; $('btnRepeatRound').style.display = 'none';
           } else {
               stopTimer();
@@ -649,6 +708,7 @@ main { display: flex; flex-direction: column; gap: 20px; }
     }
   }
 
+  // --- ACCIONES ---
   resetBtn.onclick = () => {
     if(currentList.length === 0 || currentIdx >= currentList.length) return;
     const p = currentList[currentIdx];
@@ -670,6 +730,7 @@ main { display: flex; flex-direction: column; gap: 20px; }
   };
 
   function answer(p,choose){
+    const currentQuestionNumber = p.n;
     roundAnswers[p.n] = choose; listState.answers[p.n]=choose; saveState();
     document.querySelectorAll('.opcion').forEach(b=>{
       b.disabled=true; const idx=parseInt(b.dataset.idx,10);
@@ -681,12 +742,23 @@ main { display: flex; flex-direction: column; gap: 20px; }
     
     if(choose===p.a){
       resEl.textContent='✅ Correcto';resEl.className='resultado ok';
-      speak('Correcto.', () => { if(handsfree) setTimeout(() => nextQuestion(), 1500); });
+      speak('Correcto.', () => { if(handsfree) setTimeout(() => nextQuestion(), 1000); });
     }else{
       resEl.textContent='❌ Incorrecto. La correcta es la opción '+p.a;resEl.className='resultado ko';
-      speak('Incorrecto. La respuesta correcta es la ' + p.a + ': ' + p.o[p.a-1], () => { if(handsfree) setTimeout(() => nextQuestion(), 1500); });
+      speak('Incorrecto. La respuesta correcta es la ' + p.a + ': ' + p.o[p.a-1], () => { if(handsfree) setTimeout(() => nextQuestion(), 1000); });
     }
-    resetBtn.style.display = 'inline-block'; updateStats();
+    
+    // Auto-avance en modo manual
+    if (!handsfree) {
+        setTimeout(() => {
+            if (currentList[currentIdx] && currentList[currentIdx].n === currentQuestionNumber) {
+                nextQuestion();
+            }
+        }, 1500);
+    }
+    
+    resetBtn.style.display = 'inline-block'; 
+    updateStats();
   }
 
   function updateStats(){
@@ -708,6 +780,7 @@ main { display: flex; flex-direction: column; gap: 20px; }
     else { $('prog').textContent='0/0'; }
   }
 
+  // --- MICRÓFONO Y RECONOCIMIENTO ---
   function initVoice(){
     if(!SR){ micBtn.style.display='none'; $('micStatus').textContent = 'Navegador sin micrófono.'; return; }
     recognition=new SR(); recognition.lang='es-ES'; recognition.continuous=false; recognition.interimResults=false; recognition.maxAlternatives=3;
@@ -727,7 +800,7 @@ main { display: flex; flex-direction: column; gap: 20px; }
       listening=false; micBtn.classList.remove('escuchando');
       if(handsfree && !isSpeaking && currentIdx < currentList.length) {
           if(!roundAnswers[currentList[currentIdx].n]) { setTimeout(() => startListening(), 1000); }
-      } else if(!handsfree) { $('micStatus').textContent='Pulsa el micro para hablar'; }
+      } else if(!handsfree) { $('micStatus').textContent='Modo manual activo (toca la opción)'; }
     };
   }
 
@@ -741,13 +814,32 @@ main { display: flex; flex-direction: column; gap: 20px; }
     if(!recognition||!listening)return;
     try{ recognition.abort(); }catch(e){}
     listening=false; micBtn.classList.remove('escuchando');
-    $('micStatus').textContent = handsfree ? 'Modo manos libres activo' : 'Pulsa el micro para hablar';
+    $('micStatus').textContent = handsfree ? 'Modo voz activo (escucha automática)' : 'Modo manual activo (toca la opción)';
   }
+
+  function updateMicUI() {
+    if (handsfree) {
+        micBtn.classList.remove('manual');
+        $('micStatus').textContent = 'Modo voz activo (escucha automática)';
+        if (currentIdx < currentList.length && !roundAnswers[currentList[currentIdx].n]) {
+            startListening();
+        }
+    } else {
+        micBtn.classList.add('manual');
+        $('micStatus').textContent = 'Modo manual activo (toca la opción)';
+        stopListening();
+    }
+  }
+
+  micBtn.onclick = () => {
+    handsfree = !handsfree;
+    updateMicUI();
+  };
 
   function handleVoiceCommand(text){
     if(currentIdx >= currentList.length) {
         if(/(todas|volver)/.test(text)){ setFilter('all'); }
-        if(/(repetir|ronda|examen|simulacro)/.test(text)){ startSimulacro(); }
+        if(/(repetir|ronda|examen|simulacro)/.test(text)){ $('examModal').style.display = 'flex'; }
         return;
     }
     const p=currentList[currentIdx]; const prev=roundAnswers[p.n];
@@ -781,26 +873,6 @@ main { display: flex; flex-direction: column; gap: 20px; }
     }
   }
 
-  function updateHandsfreeUI() {
-    if (handsfree) { micBtn.classList.add('handfree'); $('micStatus').textContent = 'Modo manos libres activo'; } 
-    else { micBtn.classList.remove('handfree'); $('micStatus').textContent = 'Pulsa el micro para hablar'; stopListening(); }
-  }
-
-  handsfreeToggle.onchange = (e) => {
-    handsfree = e.target.checked; updateHandsfreeUI();
-    if (handsfree && currentIdx < currentList.length) {
-      const p = currentList[currentIdx];
-      if (p) {
-        const prev = roundAnswers[p.n];
-        if (prev === undefined) {
-          let t = 'Pregunta ' + p.n + '. ' + p.q + '. ';
-          p.o.forEach((op, i) => { t += (i + 1) + ': ' + op + '. '; });
-          speak(t, () => setTimeout(() => startListening(), 2000));
-        } else { nextQuestion(); }
-      }
-    }
-  };
-
   $('prev').onclick=()=>{if(currentIdx>0){currentIdx--;stopSpeak();stopListening();render();}};
   $('next').onclick=nextQuestion;
   $('repeat').onclick=()=>{
@@ -810,20 +882,15 @@ main { display: flex; flex-direction: column; gap: 20px; }
     p.o.forEach((op,i)=>{t+=(i+1)+': '+op+'. ';});
     speak(t, () => { if(handsfree) setTimeout(() => startListening(), 2000); });
   };
-  
-  micBtn.onclick=()=>{
-    if(listening) { stopListening(); handsfreeToggle.checked = false; handsfree = false; updateHandsfreeUI(); } 
-    else { startListening(); }
-  };
 
   $('restart').onclick=()=>{
-    if(confirm('¿Borrar todo el progreso, fallos y dudas marcadas?')){
+    if(confirm('¿Borrar todo el progreso, fallos y dudas marcadas para el usuario actual (' + activeUser + ')?')){
       listState.answers={}; listState.doubts={}; roundAnswers={}; saveState(); setFilter('all');
     }
   };
   
   $('btnTheme').onclick=()=>{
-    const html=document.documentElement;
+    const html = document.documentElement;
     const currentTheme = html.getAttribute('data-theme') || 'dark';
     const next = currentTheme === 'dark' ? 'light' : 'dark';
     html.setAttribute('data-theme',next); localStorage.setItem('test_scs_theme',next);
@@ -846,13 +913,17 @@ main { display: flex; flex-direction: column; gap: 20px; }
     if(e.key==='ArrowLeft')$('prev').click();
   });
 
-  // Tema guardado
+  // ARRANQUE
   const savedTheme=localStorage.getItem('test_scs_theme');
   if(savedTheme) document.documentElement.setAttribute('data-theme',savedTheme);
   
+  loadUsers();
   loadState();
-  if(synth) { synth.onvoiceschanged = cargarVoces; cargarVoces(); }
-  if(checkLoad()){ initVoice(); setFilter('all'); }
+  loadConfig();
+  
+  if(synth) { synth.onvoiceschanged = cargarVoces; }
+  initVoice(); 
+  setFilter('all');
   if('serviceWorker' in navigator){ navigator.serviceWorker.register('service-worker.js').catch(()=>{}); }
 })();
 </script>
