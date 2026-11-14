@@ -1,4 +1,4 @@
-const CACHE = 'testscs-v11';
+const CACHE = 'testscs-v12';
 const ASSETS = ['./','./index.html','./preguntas.js','./manifest.json','./icon.svg'];
 self.addEventListener('install', e => {
   e.waitUntil(caches.open(CACHE).then(c => c.addAll(ASSETS)).then(()=>self.skipWaiting()));
