@@ -366,7 +366,7 @@ main { display: flex; flex-direction: column; gap: 20px; }
   let examUseTimer = false;
   let isPaused = false;
   
-  let audioOn=true, handsfree=true, listening=false, isSpeaking=false;
+  let audioOn=true, handsfree=true, listening=false;
   let timerInterval = null;
   let timeElapsed = 0;
   
@@ -374,6 +374,7 @@ main { display: flex; flex-direction: column; gap: 20px; }
   const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
   let recognition=null;
   let selectedVoice=null;
+  let currentUtterance = null;
 
   const $ = id => document.getElementById(id);
   const rateSlider = $('rateSlider');
@@ -678,42 +679,48 @@ main { display: flex; flex-direction: column; gap: 20px; }
     synth.speak(u);
   };
 
-  // --- SISTEMA DE VOZ SÍNCRONO (ANTI-BLOQUEO) ---
+  // --- SISTEMA DE VOZ ANTI-BLOQUEO DEFINITIVO ---
   function speak(text, onEnd) {
     if (!audioOn || !synth) { if (onEnd) onEnd(); return; }
     
-    // Limpiamos cualquier audio previo
-    if (synth.speaking || synth.pending) {
+    if (currentUtterance) {
+        currentUtterance.onend = null;
+        currentUtterance.onerror = null;
         synth.cancel();
     }
 
-    const u = new SpeechSynthesisUtterance(text);
-    if (selectedVoice) u.voice = selectedVoice;
-    u.lang = 'es-ES';
-    u.pitch = 0.8;
-    u.rate = parseFloat(rateSlider.value);
+    currentUtterance = new SpeechSynthesisUtterance(text);
+    if (selectedVoice) currentUtterance.voice = selectedVoice;
+    currentUtterance.lang = 'es-ES';
+    currentUtterance.pitch = 0.8;
+    currentUtterance.rate = parseFloat(rateSlider.value);
 
     let finished = false;
     const done = () => {
         if (finished) return;
         finished = true;
+        currentUtterance = null;
         if (onEnd) onEnd();
     };
 
-    u.onend = done;
-    u.onerror = done;
+    currentUtterance.onend = done;
+    currentUtterance.onerror = done;
     
-    synth.speak(u);
+    synth.speak(currentUtterance);
     if (synth.paused) synth.resume();
   }
 
   function stopSpeak() {
+    if (currentUtterance) {
+        currentUtterance.onend = null;
+        currentUtterance.onerror = null;
+        currentUtterance = null;
+    }
     if (synth) synth.cancel();
-    isSpeaking = false;
   }
 
   // --- RENDERIZADO ---
-  function render(){
+  function render(noSpeak = false){
     if (isPaused) return;
     
     const numEl=$('num'), enEl=$('enunciado'), opcEl=$('opciones'), resEl=$('resultado');
@@ -787,7 +794,7 @@ main { display: flex; flex-direction: column; gap: 20px; }
     }
     updateStats();
     
-    if(prev === undefined){
+    if(prev === undefined && !noSpeak){
       let t='Pregunta '+p.n+'. '+p.q+'. ';
       p.o.forEach((op,i)=>{t+=(i+1)+': '+op+'. ';}); 
       speak(t, () => { if(handsfree && !isPaused) setTimeout(() => startListening(), 2000); });
@@ -826,21 +833,38 @@ main { display: flex; flex-direction: column; gap: 20px; }
     });
     const resEl=$('resultado');
     if(currentFilter === 'exam' && choose === p.a) { examScore++; }
+    resetBtn.style.display = 'inline-block'; 
+    updateStats();
+
+    let feedback = choose === p.a ? 'Correcto. ' : 'Incorrecto. La respuesta correcta es la opción ' + p.a + ': ' + p.o[p.a-1] + '. ';
     
     if(choose===p.a){
       resEl.textContent='✅ Correcto';resEl.className='resultado ok';
-      speak('Correcto. Pasando a la siguiente.', () => { 
-          nextQuestion(); 
-      });
-    }else{
+    } else {
       resEl.textContent='❌ Incorrecto. La correcta es la opción '+p.a;resEl.className='resultado ko';
-      speak('Incorrecto. La respuesta correcta es la ' + p.a + ': ' + p.o[p.a-1] + '. ', () => { 
-          nextQuestion(); 
-      });
     }
     
-    resetBtn.style.display = 'inline-block'; 
-    updateStats();
+    let hasNext = currentIdx < currentList.length - 1;
+    
+    if (hasNext) {
+        const nextP = currentList[currentIdx + 1];
+        let nextText = ' Siguiente pregunta. ' + nextP.q + '. ';
+        nextP.o.forEach((op, i) => { nextText += (i + 1) + ': ' + op + '. '; });
+        
+        // ENCADENAMOS EL AUDIO: decimos el feedback y la nueva pregunta de corrido
+        speak(feedback + nextText, () => {
+            currentIdx++;
+            stopListening();
+            render(true); // true = actualiza la pantalla sin volver a hablar
+            if (handsfree && !isPaused) setTimeout(() => startListening(), 2000);
+        });
+    } else {
+        speak(feedback + ' Has terminado esta ronda.', () => {
+            currentIdx++;
+            stopListening();
+            render(true);
+        });
+    }
   }
 
   function updateStats(){
@@ -880,14 +904,14 @@ main { display: flex; flex-direction: column; gap: 20px; }
     };
     recognition.onend=()=>{
       listening=false; micBtn.classList.remove('escuchando');
-      if(handsfree && !isSpeaking && currentIdx < currentList.length && !isPaused) {
+      if(handsfree && !synth.speaking && currentIdx < currentList.length && !isPaused) {
           if(!roundAnswers[currentList[currentIdx].n]) { setTimeout(() => startListening(), 1000); }
       } else if(!handsfree) { $('micStatus').textContent='Modo manual activo (toca la opción)'; }
     };
   }
 
   function startListening(){
-    if(!recognition || listening || isPaused || isSpeaking) return;
+    if(!recognition || listening || isPaused || synth.speaking) return;
     try{ recognition.start(); listening=true; micBtn.classList.add('escuchando'); $('micStatus').textContent='Escuchando… Di la opción (1 a 4)'; }
     catch(e){ listening=false; if(handsfree) setTimeout(startListening, 1500); }
   }
@@ -914,7 +938,7 @@ main { display: flex; flex-direction: column; gap: 20px; }
     handsfree = !handsfree;
     updateMicUI();
     if (handsfree && currentIdx < currentList.length && !roundAnswers[currentList[currentIdx].n] && !isPaused) {
-        if (!isSpeaking) startListening();
+        if (!synth.speaking) startListening();
     }
   };
 
