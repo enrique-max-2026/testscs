@@ -374,6 +374,8 @@ main { display: flex; flex-direction: column; gap: 20px; }
   const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
   let recognition=null;
   let selectedVoice=null;
+  
+  let speechId = 0;
   let currentUtterance = null;
 
   const $ = id => document.getElementById(id);
@@ -683,34 +685,45 @@ main { display: flex; flex-direction: column; gap: 20px; }
   function speak(text, onEnd) {
     if (!audioOn || !synth) { if (onEnd) onEnd(); return; }
     
+    speechId++;
+    const myId = speechId;
+    
     if (currentUtterance) {
         currentUtterance.onend = null;
         currentUtterance.onerror = null;
-        synth.cancel();
-    }
-
-    currentUtterance = new SpeechSynthesisUtterance(text);
-    if (selectedVoice) currentUtterance.voice = selectedVoice;
-    currentUtterance.lang = 'es-ES';
-    currentUtterance.pitch = 0.8;
-    currentUtterance.rate = parseFloat(rateSlider.value);
-
-    let finished = false;
-    const done = () => {
-        if (finished) return;
-        finished = true;
         currentUtterance = null;
-        if (onEnd) onEnd();
-    };
-
-    currentUtterance.onend = done;
-    currentUtterance.onerror = done;
+    }
+    synth.cancel();
     
-    synth.speak(currentUtterance);
-    if (synth.paused) synth.resume();
+    setTimeout(() => {
+        if (myId !== speechId) return; 
+        
+        currentUtterance = new SpeechSynthesisUtterance(text);
+        if (selectedVoice) currentUtterance.voice = selectedVoice;
+        currentUtterance.lang = 'es-ES';
+        currentUtterance.pitch = 0.8;
+        currentUtterance.rate = parseFloat(rateSlider.value);
+
+        let finished = false;
+        const done = () => {
+            if (finished) return;
+            finished = true;
+            if (myId === speechId) {
+                currentUtterance = null;
+                if (onEnd) onEnd();
+            }
+        };
+
+        currentUtterance.onend = done;
+        currentUtterance.onerror = done;
+        
+        synth.speak(currentUtterance);
+        if (synth.paused) synth.resume();
+    }, 100);
   }
 
   function stopSpeak() {
+    speechId++;
     if (currentUtterance) {
         currentUtterance.onend = null;
         currentUtterance.onerror = null;
@@ -825,46 +838,39 @@ main { display: flex; flex-direction: column; gap: 20px; }
   function answer(p,choose){
     if (isPaused) return;
     
+    // 1. Guardar respuesta
     roundAnswers[p.n] = choose; listState.answers[p.n]=choose; saveState();
-    document.querySelectorAll('.opcion').forEach(b=>{
-      b.disabled=true; const idx=parseInt(b.dataset.idx,10);
-      if(idx===p.a)b.classList.add('correct');
-      if(idx===choose&&choose!==p.a)b.classList.add('wrong');
-    });
-    const resEl=$('resultado');
     if(currentFilter === 'exam' && choose === p.a) { examScore++; }
-    resetBtn.style.display = 'inline-block'; 
+    
+    // 2. Detener audio e hilos anteriores
+    stopSpeak();
+    stopListening();
+    
+    // 3. Preparar feedback
+    let feedback = choose === p.a ? 'Correcto. ' : 'Incorrecto. La respuesta correcta es la ' + p.a + ': ' + p.o[p.a-1] + '. ';
+    
+    // 4. Avanzar índice
+    currentIdx++;
+    
+    if (currentIdx >= currentList.length) {
+        render(true); // Actualiza pantalla final sin hablar
+        speak(feedback + ' Has terminado esta ronda.');
+        return;
+    }
+    
+    // 5. Actualizar la interfaz INMEDIATAMENTE
+    render(true); 
+    
+    // 6. Leer en voz alta
+    const nextP = currentList[currentIdx];
+    let nextText = 'Siguiente pregunta. ' + nextP.q + '. ';
+    nextP.o.forEach((op, i) => { nextText += (i + 1) + ': ' + op + '. '; });
+    
+    speak(feedback + nextText, () => {
+        if (handsfree && !isPaused) setTimeout(() => startListening(), 1000);
+    });
+    
     updateStats();
-
-    let feedback = choose === p.a ? 'Correcto. ' : 'Incorrecto. La respuesta correcta es la opción ' + p.a + ': ' + p.o[p.a-1] + '. ';
-    
-    if(choose===p.a){
-      resEl.textContent='✅ Correcto';resEl.className='resultado ok';
-    } else {
-      resEl.textContent='❌ Incorrecto. La correcta es la opción '+p.a;resEl.className='resultado ko';
-    }
-    
-    let hasNext = currentIdx < currentList.length - 1;
-    
-    if (hasNext) {
-        const nextP = currentList[currentIdx + 1];
-        let nextText = ' Siguiente pregunta. ' + nextP.q + '. ';
-        nextP.o.forEach((op, i) => { nextText += (i + 1) + ': ' + op + '. '; });
-        
-        // ENCADENAMOS EL AUDIO: decimos el feedback y la nueva pregunta de corrido
-        speak(feedback + nextText, () => {
-            currentIdx++;
-            stopListening();
-            render(true); // true = actualiza la pantalla sin volver a hablar
-            if (handsfree && !isPaused) setTimeout(() => startListening(), 2000);
-        });
-    } else {
-        speak(feedback + ' Has terminado esta ronda.', () => {
-            currentIdx++;
-            stopListening();
-            render(true);
-        });
-    }
   }
 
   function updateStats(){
