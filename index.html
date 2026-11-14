@@ -179,8 +179,8 @@ main { display: flex; flex-direction: column; gap: 20px; }
 .jump-box input { width: 60px; padding: 8px; border-radius: 8px; border: none; background: var(--surface); color: var(--text); text-align: center; font-size: 1rem; font-family: var(--font-main); }
 .jump-box button { background: var(--primary); color: #fff; border: none; padding: 8px 12px; border-radius: 8px; cursor: pointer; font-weight: 700; font-family: var(--font-main); }
 
-/* MODAL */
-.modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); display: none; justify-content: center; align-items: center; z-index: 1000; }
+/* MODALES */
+.modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); display: none; justify-content: center; align-items: center; z-index: 1000; backdrop-filter: blur(5px); }
 .modal-box { background: var(--surface); padding: 30px; border-radius: var(--border-radius); max-width: 450px; width: 90%; display: flex; flex-direction: column; gap: 20px; box-shadow: 0 10px 40px rgba(0,0,0,0.5); }
 .modal-box h2 { margin: 0; color: var(--primary); text-align: center; font-size: 1.4rem; }
 .modal-option { display: flex; flex-direction: column; gap: 10px; font-size: 1.1rem; background: var(--bg); padding: 15px; border-radius: 8px; }
@@ -306,6 +306,18 @@ main { display: flex; flex-direction: column; gap: 20px; }
     </main>
 </div>
 
+<!-- MODAL DE INICIO -->
+<div class="modal-overlay" id="startModal" style="display: flex; z-index: 2000;">
+    <div class="modal-box" style="text-align: center;">
+        <h2>Test SCS</h2>
+        <p>Selecciona cómo quieres responder a las preguntas:</p>
+        <div class="modal-actions" style="flex-direction: column; gap: 10px;">
+            <button id="startVoiceBtn" class="btn-repasar" style="width: 100%; font-size: 1.2rem; padding: 15px;">🎙️ Modo Voz (Micrófono)</button>
+            <button id="startManualBtn" class="btn-todas" style="width: 100%; font-size: 1.2rem; padding: 15px; border: 1px solid var(--text-muted);">👆 Modo Manual (Tocar)</button>
+        </div>
+    </div>
+</div>
+
 <!-- MODAL SIMULACRO -->
 <div class="modal-overlay" id="examModal">
     <div class="modal-box">
@@ -330,7 +342,6 @@ main { display: flex; flex-direction: column; gap: 20px; }
 (function(){
   'use strict';
   
-  // --- GESTIÓN DE USUARIOS ---
   let users = JSON.parse(localStorage.getItem('test_scs_users')) || ['Alumno 1'];
   let activeUser = localStorage.getItem('test_scs_active_user') || 'Alumno 1';
   
@@ -620,9 +631,19 @@ main { display: flex; flex-direction: column; gap: 20px; }
     const u=new SpeechSynthesisUtterance(text);
     if(selectedVoice) u.voice = selectedVoice;
     u.lang='es-ES'; u.pitch=0.8; u.rate=parseFloat(rateSlider.value);
-    const timeoutId = setTimeout(() => { isSpeaking = false; }, text.length * 100 + 2000);
-    u.onend = () => { clearTimeout(timeoutId); isSpeaking = false; if(onEnd) onEnd(); };
-    u.onerror = () => { clearTimeout(timeoutId); isSpeaking = false; if(onEnd) onEnd(); };
+    
+    let finished = false;
+    const done = () => {
+        if(finished) return;
+        finished = true;
+        clearTimeout(timeoutId);
+        isSpeaking = false;
+        if(onEnd) onEnd();
+    };
+
+    const timeoutId = setTimeout(done, text.length * 100 + 3000);
+    u.onend = done;
+    u.onerror = done;
     synth.speak(u);
   }
   function stopSpeak(){ if(synth){ synth.cancel(); isSpeaking = false; } }
@@ -730,7 +751,6 @@ main { display: flex; flex-direction: column; gap: 20px; }
   };
 
   function answer(p,choose){
-    const currentQuestionNumber = p.n;
     roundAnswers[p.n] = choose; listState.answers[p.n]=choose; saveState();
     document.querySelectorAll('.opcion').forEach(b=>{
       b.disabled=true; const idx=parseInt(b.dataset.idx,10);
@@ -742,19 +762,10 @@ main { display: flex; flex-direction: column; gap: 20px; }
     
     if(choose===p.a){
       resEl.textContent='✅ Correcto';resEl.className='resultado ok';
-      speak('Correcto.', () => { if(handsfree) setTimeout(() => nextQuestion(), 1000); });
+      speak('Correcto.', () => { setTimeout(() => nextQuestion(), 1000); });
     }else{
       resEl.textContent='❌ Incorrecto. La correcta es la opción '+p.a;resEl.className='resultado ko';
-      speak('Incorrecto. La respuesta correcta es la ' + p.a + ': ' + p.o[p.a-1], () => { if(handsfree) setTimeout(() => nextQuestion(), 1000); });
-    }
-    
-    // Auto-avance en modo manual
-    if (!handsfree) {
-        setTimeout(() => {
-            if (currentList[currentIdx] && currentList[currentIdx].n === currentQuestionNumber) {
-                nextQuestion();
-            }
-        }, 1500);
+      speak('Incorrecto. La respuesta correcta es la ' + p.a + ': ' + p.o[p.a-1], () => { setTimeout(() => nextQuestion(), 1500); });
     }
     
     resetBtn.style.display = 'inline-block'; 
@@ -821,9 +832,6 @@ main { display: flex; flex-direction: column; gap: 20px; }
     if (handsfree) {
         micBtn.classList.remove('manual');
         $('micStatus').textContent = 'Modo voz activo (escucha automática)';
-        if (currentIdx < currentList.length && !roundAnswers[currentList[currentIdx].n]) {
-            startListening();
-        }
     } else {
         micBtn.classList.add('manual');
         $('micStatus').textContent = 'Modo manual activo (toca la opción)';
@@ -834,6 +842,9 @@ main { display: flex; flex-direction: column; gap: 20px; }
   micBtn.onclick = () => {
     handsfree = !handsfree;
     updateMicUI();
+    if (handsfree && currentIdx < currentList.length && !roundAnswers[currentList[currentIdx].n]) {
+        if (!isSpeaking) startListening();
+    }
   };
 
   function handleVoiceCommand(text){
@@ -913,7 +924,7 @@ main { display: flex; flex-direction: column; gap: 20px; }
     if(e.key==='ArrowLeft')$('prev').click();
   });
 
-  // ARRANQUE
+  // ARRANQUE Y MODALES
   const savedTheme=localStorage.getItem('test_scs_theme');
   if(savedTheme) document.documentElement.setAttribute('data-theme',savedTheme);
   
@@ -923,7 +934,21 @@ main { display: flex; flex-direction: column; gap: 20px; }
   
   if(synth) { synth.onvoiceschanged = cargarVoces; }
   initVoice(); 
-  setFilter('all');
+
+  $('startVoiceBtn').onclick = () => {
+      handsfree = true;
+      updateMicUI();
+      $('startModal').style.display = 'none';
+      setFilter('all');
+  };
+  
+  $('startManualBtn').onclick = () => {
+      handsfree = false;
+      updateMicUI();
+      $('startModal').style.display = 'none';
+      setFilter('all');
+  };
+
   if('serviceWorker' in navigator){ navigator.serviceWorker.register('service-worker.js').catch(()=>{}); }
 })();
 </script>
